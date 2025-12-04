@@ -7,6 +7,7 @@ import { motion } from 'framer-motion';
 import { Settings, Flame, Play, BookOpen, Info } from 'lucide-react';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { RulesModal } from '@/components/molecules/RulesModal';
+import { InstallAppCard } from '@/components/molecules/InstallAppCard';
 import type { QuizCategory } from '@/types/database.types';
 
 const categoryIcons = ['🎯', '👖', '📦', '⭐', '🎨', '🏆'];
@@ -225,6 +226,9 @@ export default function DashboardPage() {
                 Kurallar
               </span>
             </motion.div>
+
+            {/* Uygulamayı Yükle Kartı */}
+            <InstallAppCard />
           </div>
         )}
       </section>

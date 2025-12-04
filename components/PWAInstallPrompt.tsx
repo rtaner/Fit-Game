@@ -1,18 +1,31 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { Download, X } from 'lucide-react';
 
 export function PWAInstallPrompt() {
   const [showPrompt, setShowPrompt] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const pathname = usePathname();
 
   useEffect(() => {
+    // Don't show on dashboard (card is there)
+    if (pathname === '/dashboard') {
+      return;
+    }
+
     // Check if already installed
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
     const isIOSStandalone = (window.navigator as any).standalone === true;
     
     if (isStandalone || isIOSStandalone) {
+      return;
+    }
+
+    // Check if user dismissed the card
+    const dismissed = localStorage.getItem('install-card-dismissed');
+    if (dismissed) {
       return;
     }
 
@@ -32,7 +45,7 @@ export function PWAInstallPrompt() {
     return () => {
       window.removeEventListener('beforeinstallprompt', handler);
     };
-  }, []);
+  }, [pathname]);
 
   const handleInstall = async () => {
     if (!deferredPrompt) return;
