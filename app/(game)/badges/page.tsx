@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import { ArrowLeft } from 'lucide-react';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { createClient } from '@/lib/supabase/client';
+import { getBadgeImageUrl } from '@/lib/cloudinary';
 
 interface Badge {
   id: string;
@@ -15,6 +16,7 @@ interface Badge {
   category: string;
   tier?: string;
   emoji: string;
+  image_url?: string | null;
   isHidden: boolean;
   unlockType: string;
   unlockValue: number;
@@ -238,13 +240,25 @@ export default function BadgesPage() {
                       <div className="flex items-center gap-4">
                         {/* Badge Icon */}
                         <div
-                          className={`w-14 h-14 rounded-2xl flex items-center justify-center text-2xl shrink-0 ${
+                          className={`w-14 h-14 rounded-2xl flex items-center justify-center text-2xl shrink-0 overflow-hidden ${
                             isUnlocked
                               ? 'bg-gradient-to-br from-amber-400 to-amber-500 shadow-lg shadow-amber-400/30'
                               : 'bg-gray-100'
                           }`}
                         >
-                          {isUnlocked ? badge.emoji : '🔒'}
+                          {isUnlocked ? (
+                            badge.image_url ? (
+                              <img
+                                src={getBadgeImageUrl(badge.image_url, 'small') || badge.image_url}
+                                alt={badge.name}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              badge.emoji
+                            )
+                          ) : (
+                            '🔒'
+                          )}
                         </div>
 
                         {/* Badge Info */}

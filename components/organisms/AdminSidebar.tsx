@@ -11,6 +11,7 @@ export function AdminSidebar() {
     { href: '/admin/stores', label: 'Mağazalar', icon: '🏪' },
     { href: '/admin/categories', label: 'Kategoriler', icon: '📁' },
     { href: '/admin/questions', label: 'Sorular', icon: '❓' },
+    { href: '/admin/badges', label: 'Rozetler', icon: '🏆' },
     { href: '/admin/users', label: 'Kullanıcılar', icon: '👥' },
     { href: '/admin/error-reports', label: 'Hata Raporları', icon: '⚠️' },
     { href: '/admin/analytics', label: 'Analitik', icon: '📊' },
