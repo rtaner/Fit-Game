@@ -1,0 +1,94 @@
+# Changelog
+
+All notable changes to the Mavi Fit Game project will be documented in this file.
+
+## [2.0.0] - UI Migration - 2024-12-03
+
+### Added
+
+#### Training System
+- **Flashcard Training System**: Interactive swipe-based learning cards
+- **Category Selection**: Choose from multiple quiz categories for focused learning
+- **Swipe Gestures**: Natural left/right swipe navigation through training cards
+- **Filter System**: Filter training content by gender and category
+- **Progress Tracking**: Visual progress bar showing completion status
+- **Completion Screen**: Celebration screen when finishing a category
+
+#### Game Enhancements
+- **Timer System**: 8-second countdown timer for each question
+- **Freeze Joker**: New lifeline to pause the timer
+- **Visual Timer**: Circular progress indicator in game header
+- **Joker Modal**: Centralized modal for all lifeline options
+- **Joker Tracking**: Track joker usage for badge calculations
+
+#### UI/UX Improvements
+- **Modern Design**: Clean, minimalist interface with Mavi brand colors
+- **Bottom Navigation**: Persistent navigation bar across all pages
+- **Smooth Animations**: Framer Motion animations throughout the app
+- **Mobile-First**: Optimized for mobile devices with responsive design
+- **Loading States**: Skeleton loaders and spinners for better UX
+- **Empty States**: Helpful messages when no content is available
+
+#### Dashboard
+- **Redesigned Header**: User greeting with profile avatar
+- **Streak Card**: Prominent display of daily and best streaks
+- **Category Grid**: 3-column grid layout for quiz categories
+- **Hover Effects**: Interactive animations on category cards
+
+#### Profile Page
+- **Header Card**: User info with avatar, name, store, and total points
+- **Stats Grid**: 2x2 grid showing games played, correct answers, success rate, and ranking
+- **Streak Section**: Weekly login visualization with checkmarks
+- **Badge Preview**: First 6 badges with "View All" button
+
+#### Leaderboard
+- **Time Period Tabs**: Switch between Weekly, Monthly, and All-time
+- **Ranking Types**: View by Stores, My Store, or Individual
+- **Podium Display**: Special display for top 3 positions
+- **User Highlighting**: Current user/store highlighted in list
+
+#### Badges Page
+- **Category Grouping**: Badges organized by category (Beginner, Skill, Streak, Leadership)
+- **Progress Bars**: Visual progress for locked badges
+- **Overall Progress**: Total badge completion percentage
+- **Badge Details**: Name, description, and requirements for each badge
+
+#### Authentication
+- **Modern Forms**: Clean, card-based login and register forms
+- **Password Toggle**: Show/hide password functionality
+- **Store Dropdown**: Select store during registration
+- **Form Validation**: Real-time validation with helpful error messages
+
+### Changed
+- **Color Scheme**: Updated to use Mavi brand colors (mavi-navy, mavi-light)
+- **Border Radius**: Increased to 2xl and 3xl for modern look
+- **Typography**: Improved font hierarchy and readability
+- **Spacing**: Consistent padding and margins throughout
+- **Scroll Behavior**: Game page is overflow-hidden, others scroll normally
+
+### Technical
+- **Tailwind Config**: Extended with Mavi brand colors and border radius
+- **Framer Motion**: Added for smooth animations and transitions
+- **Mobile Optimization**: All pages optimized for mobile-first approach
+- **Viewport Meta**: Configured for proper mobile rendering
+- **Component Structure**: Maintained Atomic Design pattern
+
+### Maintained
+- **Backend Integration**: All existing API calls and services preserved
+- **Supabase Connection**: Database queries unchanged
+- **Authentication Flow**: Login/register logic maintained
+- **Game Logic**: Core game mechanics preserved
+- **Badge System**: Badge calculation and awarding unchanged
+- **Leaderboard Logic**: Ranking calculations maintained
+- **State Management**: Zustand stores unchanged
+
+## [1.0.0] - Initial Release
+
+### Features
+- User authentication system
+- Quiz game with multiple categories
+- Lifeline system (50-50, Skip)
+- Badge system
+- Leaderboard
+- Admin panel
+- PWA support

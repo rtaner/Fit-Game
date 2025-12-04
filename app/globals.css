@@ -1,0 +1,138 @@
+@import "tailwindcss";
+
+@theme {
+  --color-navy: #002D66;
+  --color-mavi-blue: #003399;
+  --color-mavi-navy: #002D66;
+  --color-mavi-navy-light: #0E487A;
+  --color-mavi-light: #00AAFF;
+  --color-light-blue: #00A3E0;
+  --color-cyan: #00D4FF;
+  --color-background: #F8FAFC;
+  --color-border-gray: #dbdee1;
+}
+
+:root {
+  --vh: 1vh;
+}
+
+* {
+  border-color: var(--color-border-gray);
+}
+
+body {
+  background-color: var(--color-background);
+  color: var(--color-text-dark);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* Mobile viewport height fix */
+@supports (height: 100dvh) {
+  .min-h-screen {
+    min-height: 100dvh;
+  }
+  
+  .h-screen {
+    height: 100dvh;
+  }
+}
+
+/* Smooth transitions for all interactive elements */
+button, a, input, select {
+  transition: all 200ms ease-out;
+}
+
+/* Custom scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-background);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border-gray);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-gray);
+}
+
+/* Animation keyframes */
+@keyframes pulse-green {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+@keyframes shake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-10px);
+  }
+  75% {
+    transform: translateX(10px);
+  }
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Utility classes for animations */
+.animate-pulse-green {
+  animation: pulse-green 500ms ease-in-out;
+}
+
+.animate-shake {
+  animation: shake 500ms ease-in-out;
+}
+
+.animate-slide-up {
+  animation: slide-up 300ms ease-out;
+}
+
+/* Badge celebration animations */
+@keyframes confetti {
+  0% {
+    transform: translateY(0) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100vh) rotate(720deg);
+    opacity: 0;
+  }
+}
+
+@keyframes shine {
+  0% {
+    transform: translateX(-100%) rotate(45deg);
+  }
+  50%,
+  100% {
+    transform: translateX(200%) rotate(45deg);
+  }
+}
+
+.animate-confetti {
+  animation: confetti 3s ease-out forwards;
+}
+
+.animate-shine {
+  animation: shine 2s ease-in-out infinite;
+}
