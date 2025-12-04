@@ -82,6 +82,52 @@ All notable changes to the Mavi Fit Game project will be documented in this file
 - **Leaderboard Logic**: Ranking calculations maintained
 - **State Management**: Zustand stores unchanged
 
+## [2.1.0] - PWA Enhancement - 2024-12-04
+
+### Added
+
+#### Progressive Web App (PWA)
+- **Service Worker**: Offline support with intelligent caching strategy
+  - Static assets cached on install
+  - API responses cached dynamically
+  - Network-first for API calls, cache-first for static files
+- **Install Prompt**: Custom install prompt component
+  - Shows after 30 seconds of usage
+  - Dismissible with 7-day cooldown
+  - Modern UI with download icon
+- **Offline Page**: Dedicated offline experience
+  - Clear messaging when no internet connection
+  - Retry button to reload
+  - Helpful instructions
+- **Manifest Configuration**: Complete PWA manifest
+  - Standalone display mode
+  - Portrait orientation
+  - Mavi brand colors (theme: #002D66, background: #F8FAFC)
+  - Icon definitions for all sizes
+- **Apple Touch Icons**: iOS home screen support
+- **Service Worker Registration**: Automatic registration on page load
+- **Cache Management**: Automatic cleanup of old caches
+- **Update Detection**: Notifies when new version is available
+
+#### Technical
+- **Next.js Headers**: Optimized caching for SW and manifest
+- **PWA Utilities**: Helper functions for install detection
+- **TypeScript Support**: Full type safety for PWA features
+- **Mobile Optimization**: Enhanced mobile app-like experience
+
+### Documentation
+- **PWA Setup Guide**: Comprehensive setup and testing instructions
+- **Icon Generation Guide**: Multiple methods for creating PWA icons
+- **Troubleshooting**: Common issues and solutions
+- **Testing Checklist**: Complete testing workflow
+
+### Requirements
+- Icon files need to be added to `public/icons/`:
+  - icon-192x192.png (192x192 pixels)
+  - icon-512x512.png (512x512 pixels)
+  - apple-touch-icon.png (180x180 pixels) [Optional]
+  - favicon.ico (32x32 pixels) [Optional]
+
 ## [1.0.0] - Initial Release
 
 ### Features
@@ -91,4 +137,4 @@ All notable changes to the Mavi Fit Game project will be documented in this file
 - Badge system
 - Leaderboard
 - Admin panel
-- PWA support
+- Basic PWA support
