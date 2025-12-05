@@ -60,16 +60,16 @@ export async function uploadImage(
     }
   }
 
-  try {
+  const uploadOptions: any = {
+    folder,
+    resource_type: 'image',
+    transformation: [
+      { width: 1200, height: 1200, crop: 'limit' },
+      { quality: 'auto', fetch_format: 'auto' },
+    ],
+  };
 
-    const uploadOptions: any = {
-      folder,
-      resource_type: 'image',
-      transformation: [
-        { width: 1200, height: 1200, crop: 'limit' },
-        { quality: 'auto', fetch_format: 'auto' },
-      ],
-    };
+  try {
 
     // Eğer custom filename verilmişse kullan (temizlenmiş halde)
     if (customFilename) {
