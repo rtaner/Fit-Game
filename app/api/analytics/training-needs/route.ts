@@ -25,27 +25,38 @@ export async function GET(request: NextRequest) {
     }
 
     const searchParams = request.nextUrl.searchParams;
+    const startDate = searchParams.get('startDate') || undefined;
+    const endDate = searchParams.get('endDate') || undefined;
 
     // Get store filter based on user role
     const userStoreFilter = userRole === 'store_manager' ? storeCode : undefined;
 
     const filters = {
-      startDate: searchParams.get('startDate') || undefined,
-      endDate: searchParams.get('endDate') || undefined,
+      startDate,
+      endDate,
       // Store managers can only see their own store
-      storeId: userStoreFilter || searchParams.get('storeId') || undefined,
-      userId: searchParams.get('userId') || undefined,
-      categoryId: searchParams.get('categoryId') || undefined,
-      tags: searchParams.get('tags')?.split(',') || undefined,
+      storeId: userStoreFilter || undefined,
     };
 
-    const confusionMatrix = await analyticsService.getConfusionMatrix(filters);
+    const [categoryNeeds, confusedFits, failedFits, storeComparison] = await Promise.all([
+      analyticsService.getCategoryTrainingNeeds(filters),
+      analyticsService.getMostConfusedFits(filters),
+      analyticsService.getMostFailedFits(filters),
+      analyticsService.getStoreComparison(filters),
+    ]);
 
-    return NextResponse.json({ data: confusionMatrix });
+    return NextResponse.json({
+      data: {
+        categoryNeeds,
+        confusedFits: confusedFits.slice(0, 10),
+        failedFits: failedFits.slice(0, 10),
+        storeComparison,
+      },
+    });
   } catch (error) {
-    console.error('Error fetching confusion matrix:', error);
+    console.error('Error fetching training needs:', error);
     return NextResponse.json(
-      { error: { code: 'SERVER_ERROR', message: 'Confusion matrix alınamadı' } },
+      { error: { code: 'SERVER_ERROR', message: 'Eğitim ihtiyaçları alınamadı' } },
       { status: 500 }
     );
   }

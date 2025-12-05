@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -17,6 +17,11 @@ export default function LoginPage() {
   const router = useRouter();
   const { setUser, setError, error } = useAuthStore();
   const [isLoading, setIsLoading] = useState(false);
+
+  // Clear error on mount
+  useEffect(() => {
+    setError(null);
+  }, [setError]);
 
   const {
     register,

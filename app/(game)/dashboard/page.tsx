@@ -76,11 +76,19 @@ export default function DashboardPage() {
             </h1>
           </motion.div>
           <div className="flex gap-3">
-            {user?.role === 'admin' && (
+            {(user?.role === 'admin' || user?.role === 'store_manager') && (
               <motion.button
                 whileTap={{ scale: 0.95 }}
-                onClick={() => router.push('/admin/stores')}
+                onClick={() => {
+                  // Admin goes to stores page, store_manager goes to analytics
+                  if (user.role === 'admin') {
+                    router.push('/admin/stores');
+                  } else {
+                    router.push('/admin/analytics');
+                  }
+                }}
                 className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors"
+                title={user.role === 'admin' ? 'Yönetim Paneli' : 'Analitik'}
               >
                 <Settings className="h-5 w-5 text-gray-700" />
               </motion.button>

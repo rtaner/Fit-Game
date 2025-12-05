@@ -4,7 +4,7 @@ export interface User {
   first_name: string;
   last_name: string;
   store_code: number;
-  role: 'employee' | 'admin';
+  role: 'employee' | 'admin' | 'store_manager';
   current_streak: number;
   longest_streak: number;
   last_login_date: string | null;

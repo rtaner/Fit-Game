@@ -2,20 +2,45 @@
 
 import { useState } from 'react';
 import { usePathname } from 'next/navigation';
+import { useAuthStore } from '@/stores/useAuthStore';
 
 export function AdminSidebar() {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
+  const { user } = useAuthStore();
 
-  const navItems = [
-    { href: '/admin/stores', label: 'Mağazalar', icon: '🏪' },
-    { href: '/admin/categories', label: 'Kategoriler', icon: '📁' },
-    { href: '/admin/questions', label: 'Sorular', icon: '❓' },
-    { href: '/admin/badges', label: 'Rozetler', icon: '🏆' },
-    { href: '/admin/users', label: 'Kullanıcılar', icon: '👥' },
-    { href: '/admin/error-reports', label: 'Hata Raporları', icon: '⚠️' },
-    { href: '/admin/analytics', label: 'Analitik', icon: '📊' },
+  // Admin sees all menu items
+  const adminNavItems = [
+    { href: '/admin/stores', label: 'Mağazalar', icon: '🏪', roles: ['admin'] },
+    { href: '/admin/categories', label: 'Kategoriler', icon: '📁', roles: ['admin'] },
+    { href: '/admin/questions', label: 'Sorular', icon: '❓', roles: ['admin'] },
+    { href: '/admin/badges', label: 'Rozetler', icon: '🏆', roles: ['admin'] },
+    { href: '/admin/users', label: 'Kullanıcılar', icon: '👥', roles: ['admin'] },
+    { href: '/admin/error-reports', label: 'Hata Raporları', icon: '⚠️', roles: ['admin'] },
+    { href: '/admin/analytics', label: 'Analitik', icon: '📊', roles: ['admin', 'store_manager'] },
+    { href: '/admin/training-needs', label: 'Eğitim İhtiyacı', icon: '🎯', roles: ['admin', 'store_manager'] },
   ];
+
+  // Filter nav items based on user role
+  const navItems = adminNavItems.filter((item) => 
+    user && item.roles.includes(user.role)
+  );
+
+  // Get panel title based on role
+  const getPanelTitle = () => {
+    if (user?.role === 'store_manager') {
+      return {
+        title: 'Mağaza Yönetimi',
+        subtitle: `Mağaza ${user.store_code}`,
+      };
+    }
+    return {
+      title: 'Yönetim Paneli',
+      subtitle: 'Admin Dashboard',
+    };
+  };
+
+  const panelInfo = getPanelTitle();
 
   return (
     <>
@@ -66,8 +91,8 @@ export function AdminSidebar() {
         <div className="p-6 h-full flex flex-col overflow-y-auto">
           {/* Header */}
           <div className="mb-6 mt-16">
-            <h2 className="text-2xl font-bold text-gray-800">Yönetim Paneli</h2>
-            <p className="text-sm text-gray-500 mt-1">Admin Dashboard</p>
+            <h2 className="text-2xl font-bold text-gray-800">{panelInfo.title}</h2>
+            <p className="text-sm text-gray-500 mt-1">{panelInfo.subtitle}</p>
           </div>
 
           {/* Dashboard Link - Top */}

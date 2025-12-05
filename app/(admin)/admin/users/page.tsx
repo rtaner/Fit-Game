@@ -14,7 +14,7 @@ interface User {
   first_name: string;
   last_name: string;
   store_code: number;
-  role: 'employee' | 'admin';
+  role: 'employee' | 'admin' | 'store_manager';
   created_at: string;
 }
 
@@ -187,9 +187,20 @@ export default function UsersPage() {
     }
   };
 
-  const handleRoleChange = async (userId: string, newRole: 'employee' | 'admin') => {
+  const handleRoleChange = async (userId: string, newRole: 'employee' | 'admin' | 'store_manager') => {
     if (!currentUser) {
-      alert('Oturum bilgisi bulunamadı');
+      showToast('Oturum bilgisi bulunamadı', 'error');
+      return;
+    }
+
+    // Confirm role change
+    const roleNames = {
+      employee: 'Çalışan',
+      admin: 'Admin',
+      store_manager: 'Mağaza Yöneticisi',
+    };
+
+    if (!confirm(`Bu kullanıcının rolünü "${roleNames[newRole]}" olarak değiştirmek istediğinizden emin misiniz?`)) {
       return;
     }
 
@@ -202,13 +213,13 @@ export default function UsersPage() {
 
       if (response.ok) {
         await fetchUsers();
-        alert('Rol başarıyla güncellendi!');
+        showToast(`Rol başarıyla "${roleNames[newRole]}" olarak güncellendi!`, 'success');
       } else {
         const result = await response.json();
-        alert(result.error?.message || 'Rol güncellenemedi');
+        showToast(result.error?.message || 'Rol güncellenemedi', 'error');
       }
     } catch (err) {
-      alert('Bir hata oluştu');
+      showToast('Bir hata oluştu', 'error');
     }
   };
 
@@ -233,6 +244,22 @@ export default function UsersPage() {
           {error}
         </div>
       )}
+
+      {/* Role Info Card */}
+      <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+        <h3 className="font-semibold mb-2 text-blue-900 text-sm">💡 Rol Açıklamaları:</h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs text-blue-800">
+          <div>
+            <span className="font-semibold">Çalışan:</span> Oyun oynayabilir, kendi istatistiklerini görebilir
+          </div>
+          <div>
+            <span className="font-semibold">Mağaza Yöneticisi:</span> Kendi mağazasının analitik ve eğitim ihtiyacı verilerini görebilir
+          </div>
+          <div>
+            <span className="font-semibold">Admin:</span> Tüm yönetim paneline erişebilir, tüm mağazaları görebilir
+          </div>
+        </div>
+      </div>
 
       <div className="bg-white rounded-lg shadow overflow-hidden">
         <table className="min-w-full divide-y divide-gray-200">
@@ -270,34 +297,24 @@ export default function UsersPage() {
                   <div className="text-sm text-gray-900">{user.store_code}</div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <span
-                    className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                  <select
+                    value={user.role}
+                    onChange={(e) => handleRoleChange(user.id, e.target.value as 'employee' | 'admin' | 'store_manager')}
+                    className={`px-3 py-1 text-xs font-semibold rounded-full border-2 cursor-pointer transition-colors ${
                       user.role === 'admin'
-                        ? 'bg-red-100 text-red-800'
-                        : 'bg-green-100 text-green-800'
+                        ? 'bg-red-100 text-red-800 border-red-300 hover:bg-red-200'
+                        : user.role === 'store_manager'
+                        ? 'bg-blue-100 text-blue-800 border-blue-300 hover:bg-blue-200'
+                        : 'bg-green-100 text-green-800 border-green-300 hover:bg-green-200'
                     }`}
                   >
-                    {user.role === 'admin' ? 'Admin' : 'Çalışan'}
-                  </span>
+                    <option value="employee">Çalışan</option>
+                    <option value="store_manager">Mağaza Yöneticisi</option>
+                    <option value="admin">Admin</option>
+                  </select>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm">
                   <div className="flex gap-2">
-                    {/* Role Change Button */}
-                    {user.role === 'employee' ? (
-                      <button
-                        onClick={() => handleRoleChange(user.id, 'admin')}
-                        className="text-blue-600 hover:text-blue-900 px-2 py-1 rounded hover:bg-blue-50"
-                      >
-                        Admin Yap
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => handleRoleChange(user.id, 'employee')}
-                        className="text-orange-600 hover:text-orange-900 px-2 py-1 rounded hover:bg-orange-50"
-                      >
-                        Çalışan Yap
-                      </button>
-                    )}
                     
                     {/* Password Reset Button */}
                     <button

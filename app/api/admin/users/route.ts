@@ -79,3 +79,96 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+
+/**
+ * PATCH /api/admin/users
+ * Update user role
+ */
+export async function PATCH(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { userId, role, currentUserId } = body;
+
+    console.log('=== Update User Role API Debug ===');
+    console.log('userId:', userId);
+    console.log('role:', role);
+    console.log('currentUserId:', currentUserId);
+
+    if (!currentUserId) {
+      return NextResponse.json(
+        {
+          error: {
+            code: 'UNAUTHORIZED',
+            message: 'Oturum süreniz dolmuş, lütfen tekrar giriş yapın',
+          },
+        },
+        { status: 401 }
+      );
+    }
+
+    // Validate admin authorization
+    const isAdmin = await validateAdminAuth(currentUserId);
+
+    if (!isAdmin) {
+      return NextResponse.json(
+        {
+          error: {
+            code: 'FORBIDDEN',
+            message: 'Bu işlem için yetkiniz yok',
+          },
+        },
+        { status: 403 }
+      );
+    }
+
+    // Validate role
+    if (!['employee', 'admin', 'store_manager'].includes(role)) {
+      return NextResponse.json(
+        {
+          error: {
+            code: 'INVALID_ROLE',
+            message: 'Geçersiz rol',
+          },
+        },
+        { status: 400 }
+      );
+    }
+
+    // Update user role
+    const { createClient } = await import('@/lib/supabase/client');
+    const supabase = createClient();
+
+    const { error } = await supabase
+      .from('users')
+      .update({ role })
+      .eq('id', userId);
+
+    if (error) {
+      console.error('Update role error:', error);
+      return NextResponse.json(
+        {
+          error: {
+            code: 'UPDATE_FAILED',
+            message: 'Rol güncellenemedi',
+          },
+        },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({
+      data: { success: true },
+    });
+  } catch (error) {
+    console.error('Update user role error:', error);
+    return NextResponse.json(
+      {
+        error: {
+          code: 'INTERNAL_ERROR',
+          message: 'Rol güncellenirken bir hata oluştu',
+        },
+      },
+      { status: 500 }
+    );
+  }
+}

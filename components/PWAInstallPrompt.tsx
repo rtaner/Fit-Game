@@ -10,8 +10,8 @@ export function PWAInstallPrompt() {
   const pathname = usePathname();
 
   useEffect(() => {
-    // Don't show on dashboard (card is there)
-    if (pathname === '/dashboard') {
+    // Don't show on dashboard (card is there) or game screens
+    if (pathname === '/dashboard' || pathname?.startsWith('/game')) {
       return;
     }
 

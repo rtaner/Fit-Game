@@ -38,9 +38,9 @@ export const analyticsService = {
       .select(`
         *,
         question:question_items!answer_analytics_question_id_fkey(id, name, tags),
-        correct_answer:question_items!answer_analytics_correct_answer_id_fkey(id, name),
+        correct_answer:question_items!answer_analytics_correct_answer_id_fkey(id, name, fit_category),
         selected_answer:question_items!answer_analytics_selected_answer_id_fkey(id, name),
-        user:users!answer_analytics_user_id_fkey(id, username, store_id)
+        user:users!answer_analytics_user_id_fkey(id, username, store_code)
       `);
 
     if (filters.startDate) {
@@ -56,7 +56,7 @@ export const analyticsService = {
     }
 
     if (filters.storeId) {
-      query = query.eq('user.store_id', filters.storeId);
+      query = query.eq('user.store_code', filters.storeId);
     }
 
     const { data, error } = await query.order('created_at', { ascending: false });
@@ -204,5 +204,214 @@ export const analyticsService = {
       responseTimeMs: item.response_time_ms,
       lifelineUsed: item.lifeline_used,
     }));
+  },
+
+  // NEW: Get most confused fits (fit pairs that are confused with each other)
+  async getMostConfusedFits(filters: AnalyticsFilter = {}) {
+    const analytics = await this.getAnalytics(filters);
+
+    if (!analytics) return [];
+
+    // Group by correct answer (fit) and selected answer (confused fit)
+    const confusionMap = new Map<
+      string,
+      {
+        correctFit: string;
+        confusedWithFit: string;
+        count: number;
+        percentage: number;
+      }
+    >();
+
+    analytics
+      .filter((a) => !a.is_correct)
+      .forEach((item) => {
+        const key = `${item.correct_answer?.name}-${item.selected_answer?.name}`;
+
+        if (confusionMap.has(key)) {
+          const existing = confusionMap.get(key)!;
+          existing.count += 1;
+        } else {
+          confusionMap.set(key, {
+            correctFit: item.correct_answer?.name || 'Unknown',
+            confusedWithFit: item.selected_answer?.name || 'Unknown',
+            count: 1,
+            percentage: 0,
+          });
+        }
+      });
+
+    // Calculate percentages
+    const totalIncorrect = analytics.filter((a) => !a.is_correct).length;
+    const confusionArray = Array.from(confusionMap.values());
+
+    confusionArray.forEach((item) => {
+      item.percentage = totalIncorrect > 0 ? (item.count / totalIncorrect) * 100 : 0;
+    });
+
+    // Sort by count descending
+    return confusionArray.sort((a, b) => b.count - a.count);
+  },
+
+  // NEW: Get most failed fits (fits with highest error rate)
+  async getMostFailedFits(filters: AnalyticsFilter = {}) {
+    const analytics = await this.getAnalytics(filters);
+
+    if (!analytics) return [];
+
+    // Group by correct answer (the fit that should have been selected)
+    const fitMap = new Map<
+      string,
+      {
+        fitName: string;
+        totalAsked: number;
+        totalWrong: number;
+        errorRate: number;
+      }
+    >();
+
+    analytics.forEach((item) => {
+      const fitName = item.correct_answer?.name || 'Unknown';
+
+      if (fitMap.has(fitName)) {
+        const existing = fitMap.get(fitName)!;
+        existing.totalAsked += 1;
+        if (!item.is_correct) existing.totalWrong += 1;
+      } else {
+        fitMap.set(fitName, {
+          fitName,
+          totalAsked: 1,
+          totalWrong: item.is_correct ? 0 : 1,
+          errorRate: 0,
+        });
+      }
+    });
+
+    // Calculate error rates
+    const fitArray = Array.from(fitMap.values());
+    fitArray.forEach((item) => {
+      item.errorRate = item.totalAsked > 0 ? (item.totalWrong / item.totalAsked) * 100 : 0;
+    });
+
+    // Sort by error rate descending
+    return fitArray.sort((a, b) => b.errorRate - a.errorRate);
+  },
+
+  // NEW: Get category training needs (categories with low performance)
+  async getCategoryTrainingNeeds(filters: AnalyticsFilter = {}) {
+    const analytics = await this.getAnalytics(filters);
+
+    if (!analytics) return [];
+
+    // Group by fit_category
+    const categoryMap = new Map<
+      string,
+      { category: string; total: number; correct: number; accuracy: number }
+    >();
+
+    analytics.forEach((item) => {
+      // Get fit_category from correct_answer
+      const fitCategory = item.correct_answer?.fit_category || 'Diğer';
+
+      if (categoryMap.has(fitCategory)) {
+        const existing = categoryMap.get(fitCategory)!;
+        existing.total += 1;
+        if (item.is_correct) existing.correct += 1;
+      } else {
+        categoryMap.set(fitCategory, {
+          category: fitCategory,
+          total: 1,
+          correct: item.is_correct ? 1 : 0,
+          accuracy: 0,
+        });
+      }
+    });
+
+    // Calculate accuracy
+    const categoryArray = Array.from(categoryMap.values());
+    categoryArray.forEach((item) => {
+      item.accuracy = item.total > 0 ? (item.correct / item.total) * 100 : 0;
+    });
+
+    // Sort by accuracy ascending (worst first)
+    return categoryArray
+      .map((cat) => ({
+        category: cat.category,
+        accuracy: cat.accuracy,
+        total: cat.total,
+        correct: cat.correct,
+        wrong: cat.total - cat.correct,
+        trainingPriority:
+          cat.accuracy < 60 ? 'high' : cat.accuracy < 80 ? 'medium' : 'low',
+      }))
+      .sort((a, b) => a.accuracy - b.accuracy);
+  },
+
+  // NEW: Get user-specific weak points
+  async getUserWeakPoints(userId: string, filters: AnalyticsFilter = {}) {
+    const userFilters = { ...filters, userId };
+    const analytics = await this.getAnalytics(userFilters);
+
+    if (!analytics) return null;
+
+    const tagPerformance = await this.getTagPerformance(userFilters);
+    const confusedFits = await this.getMostConfusedFits(userFilters);
+    const failedFits = await this.getMostFailedFits(userFilters);
+
+    return {
+      weakCategories: tagPerformance.filter((t) => t.accuracy < 70).slice(0, 5),
+      mostConfusedFits: confusedFits.slice(0, 5),
+      mostFailedFits: failedFits.slice(0, 5),
+      totalAnswers: analytics.length,
+      overallAccuracy:
+        analytics.length > 0
+          ? (analytics.filter((a) => a.is_correct).length / analytics.length) * 100
+          : 0,
+    };
+  },
+
+  // NEW: Get store comparison
+  async getStoreComparison(filters: AnalyticsFilter = {}) {
+    const analytics = await this.getAnalytics(filters);
+
+    if (!analytics) return [];
+
+    // Group by store
+    const storeMap = new Map<
+      number,
+      {
+        storeCode: number;
+        totalAnswers: number;
+        correctAnswers: number;
+        accuracy: number;
+      }
+    >();
+
+    analytics.forEach((item) => {
+      const storeCode = item.user?.store_code || 0;
+
+      if (storeMap.has(storeCode)) {
+        const existing = storeMap.get(storeCode)!;
+        existing.totalAnswers += 1;
+        if (item.is_correct) existing.correctAnswers += 1;
+      } else {
+        storeMap.set(storeCode, {
+          storeCode,
+          totalAnswers: 1,
+          correctAnswers: item.is_correct ? 1 : 0,
+          accuracy: 0,
+        });
+      }
+    });
+
+    // Calculate accuracy
+    const storeArray = Array.from(storeMap.values());
+    storeArray.forEach((item) => {
+      item.accuracy =
+        item.totalAnswers > 0 ? (item.correctAnswers / item.totalAnswers) * 100 : 0;
+    });
+
+    // Sort by accuracy ascending (worst first)
+    return storeArray.sort((a, b) => a.accuracy - b.accuracy);
   },
 };

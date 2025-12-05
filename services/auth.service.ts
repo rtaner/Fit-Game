@@ -423,3 +423,31 @@ export async function checkForcePasswordChange(
     return false;
   }
 }
+
+/**
+ * Check if user is admin
+ */
+export function isAdmin(user: User | null): boolean {
+  return user?.role === 'admin';
+}
+
+/**
+ * Check if user is store manager
+ */
+export function isStoreManager(user: User | null): boolean {
+  return user?.role === 'store_manager';
+}
+
+/**
+ * Check if user has analytics access (admin or store_manager)
+ */
+export function hasAnalyticsAccess(user: User | null): boolean {
+  return user?.role === 'admin' || user?.role === 'store_manager';
+}
+
+/**
+ * Check if user is employee
+ */
+export function isEmployee(user: User | null): boolean {
+  return user?.role === 'employee';
+}

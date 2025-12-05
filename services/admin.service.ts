@@ -16,7 +16,7 @@ export interface UserListParams {
   page?: number;
   limit?: number;
   search?: string;
-  role?: 'employee' | 'admin';
+  role?: 'employee' | 'admin' | 'store_manager';
   storeCode?: number;
 }
 
