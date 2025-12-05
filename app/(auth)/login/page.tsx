@@ -56,9 +56,15 @@ export default function LoginPage() {
         return;
       }
       
-      // Update streak on login
+      // Update streak on login (only once per day)
       try {
-        await useAuthStore.getState().updateStreak(result.user.id);
+        const lastStreakUpdate = localStorage.getItem('last-streak-update');
+        const today = new Date().toDateString();
+        
+        if (lastStreakUpdate !== today) {
+          await useAuthStore.getState().updateStreak(result.user.id);
+          localStorage.setItem('last-streak-update', today);
+        }
       } catch (error) {
         console.error('Error updating streak:', error);
       }
