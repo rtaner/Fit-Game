@@ -10,14 +10,6 @@ export const metadata: Metadata = {
   title: 'Mavi Fit Game',
   description: 'Gamified quiz app for learning product fits',
   manifest: '/manifest.json',
-  themeColor: '#002D66',
-  viewport: {
-    width: 'device-width',
-    initialScale: 1,
-    maximumScale: 1,
-    userScalable: false,
-    viewportFit: 'cover',
-  },
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
@@ -26,6 +18,15 @@ export const metadata: Metadata = {
   other: {
     'mobile-web-app-capable': 'yes',
   },
+};
+
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: 'cover',
+  themeColor: '#002D66',
 };
 
 export default function RootLayout({
