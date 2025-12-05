@@ -19,6 +19,7 @@ export function AdminSidebar() {
     { href: '/admin/error-reports', label: 'Hata Raporları', icon: '⚠️', roles: ['admin'] },
     { href: '/admin/analytics', label: 'Analitik', icon: '📊', roles: ['admin', 'store_manager'] },
     { href: '/admin/training-needs', label: 'Eğitim İhtiyacı', icon: '🎯', roles: ['admin', 'store_manager'] },
+    { href: '/admin/ai-insights', label: 'AI Eğitim Analizi', icon: '✨', roles: ['admin', 'store_manager'] },
   ];
 
   // Filter nav items based on user role

@@ -80,27 +80,40 @@ export default function DashboardPage() {
               <motion.button
                 whileTap={{ scale: 0.95 }}
                 onClick={() => {
-                  // Admin goes to stores page, store_manager goes to analytics
-                  if (user.role === 'admin') {
-                    router.push('/admin/stores');
-                  } else {
-                    router.push('/admin/analytics');
-                  }
+                  // Both admin and store_manager go to admin dashboard menu
+                  router.push('/admin');
                 }}
-                className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors"
-                title={user.role === 'admin' ? 'Yönetim Paneli' : 'Analitik'}
+                className="flex items-center gap-2 px-3 py-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
               >
                 <Settings className="h-5 w-5 text-gray-700" />
+                <span className="text-sm text-gray-700 font-medium">Analizler</span>
               </motion.button>
             )}
-            <Link
-              href="/profile"
-              className="w-12 h-12 rounded-full bg-[#002D66] flex items-center justify-center shadow-lg shadow-[#002D66]/20"
-            >
-              <span className="text-white font-semibold">
-                {user?.first_name?.charAt(0) || 'U'}
-              </span>
-            </Link>
+            <div className="flex items-center gap-2">
+              <Link
+                href="/profile"
+                className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+              >
+                <div className="w-12 h-12 rounded-full bg-[#002D66] flex items-center justify-center shadow-lg shadow-[#002D66]/20">
+                  <span className="text-white font-semibold">
+                    {user?.first_name?.charAt(0) || 'U'}
+                  </span>
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-sm text-gray-700 font-medium">Profil</span>
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      useAuthStore.getState().logout();
+                      router.push('/login');
+                    }}
+                    className="text-xs text-gray-500 hover:text-gray-700 text-left"
+                  >
+                    Çıkış Yap
+                  </button>
+                </div>
+              </Link>
+            </div>
           </div>
         </div>
       </header>
@@ -237,6 +250,15 @@ export default function DashboardPage() {
 
             {/* Uygulamayı Yükle Kartı */}
             <InstallAppCard />
+          </div>
+        )}
+        
+        {/* Credit Text */}
+        {!isLoading && categories.length > 0 && (
+          <div className="mt-6 pb-2">
+            <p className="text-center text-gray-400 text-xs">
+              Hazırlayan: Bilecik Bozüyük Mağazası - Başarılar
+            </p>
           </div>
         )}
       </section>

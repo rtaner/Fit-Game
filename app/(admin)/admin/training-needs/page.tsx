@@ -136,6 +136,8 @@ export default function TrainingNeedsPage() {
     }
   };
 
+
+
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case 'high':

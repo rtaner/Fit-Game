@@ -184,13 +184,6 @@ export default function LoginPage() {
             )}
           </div>
 
-          {/* Forgot Password */}
-          <div className="text-right">
-            <a href="/reset-password" className="text-sm text-mavi-navy font-medium hover:underline">
-              Şifremi Unuttum
-            </a>
-          </div>
-
           {/* Error Message */}
           {error && (
             <motion.div
@@ -224,11 +217,14 @@ export default function LoginPage() {
 
       {/* Register Link */}
       <footer className="flex-none py-8 px-6">
-        <p className="text-center text-gray-500">
+        <p className="text-center text-gray-500 mb-4">
           Hesabın yok mu?{' '}
           <a href="/register" className="text-mavi-navy font-semibold hover:underline">
             Kayıt Ol
           </a>
+        </p>
+        <p className="text-center text-gray-400 text-sm">
+          Bilecik Bozüyük
         </p>
       </footer>
     </main>
