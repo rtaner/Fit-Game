@@ -7,7 +7,7 @@ const registerSchema = z.object({
   lastName: z.string().min(1),
   username: z.string().min(3),
   password: z.string().min(6),
-  storeCode: z.number().int().min(1500).max(1900),
+  storeCode: z.number().int().positive(),
 });
 
 export async function POST(request: NextRequest) {

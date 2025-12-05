@@ -1,81 +1,80 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/client';
+import { getUserList, validateAdminAuth } from '@/services/admin.service';
 
+/**
+ * GET /api/admin/users
+ * List users with pagination and filters
+ */
 export async function GET(request: NextRequest) {
   try {
-    const supabase = createClient();
+    // Get user ID from query parameter
+    const searchParams = request.nextUrl.searchParams;
+    const userId = searchParams.get('userId');
+    
+    console.log('=== Admin Users API Debug ===');
+    console.log('userId from query:', userId);
 
-    const { data: users, error } = await supabase
-      .from('users')
-      .select('*')
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      console.error('Error fetching users:', error);
+    if (!userId) {
+      console.log('ERROR: No user ID in query');
       return NextResponse.json(
-        { error: { code: 'SERVER_ERROR', message: 'Kullanıcılar alınamadı' } },
-        { status: 500 }
+        {
+          error: {
+            code: 'UNAUTHORIZED',
+            message: 'Oturum süreniz dolmuş, lütfen tekrar giriş yapın',
+          },
+        },
+        { status: 401 }
       );
     }
 
-    return NextResponse.json({ data: users });
-  } catch (error) {
-    console.error('Error in users endpoint:', error);
-    return NextResponse.json(
-      { error: { code: 'SERVER_ERROR', message: 'Sunucu hatası' } },
-      { status: 500 }
-    );
-  }
-}
+    // Validate admin authorization
+    console.log('Validating admin auth for user:', userId);
+    const isAdmin = await validateAdminAuth(userId);
+    console.log('Is admin:', isAdmin);
 
-export async function PATCH(request: NextRequest) {
-  try {
-    const { userId, role, currentUserId } = await request.json();
-
-    if (!userId || !role || !currentUserId) {
+    if (!isAdmin) {
+      console.log('ERROR: User is not admin');
       return NextResponse.json(
-        { error: { code: 'BAD_REQUEST', message: 'userId, role ve currentUserId gerekli' } },
-        { status: 400 }
-      );
-    }
-
-    const supabase = createClient();
-
-    // Check if current user is admin
-    const { data: currentUser, error: authError } = await supabase
-      .from('users')
-      .select('role')
-      .eq('id', currentUserId)
-      .single();
-
-    if (authError || !currentUser || currentUser.role !== 'admin') {
-      return NextResponse.json(
-        { error: { code: 'FORBIDDEN', message: 'Bu işlem için yetkiniz yok' } },
+        {
+          error: {
+            code: 'FORBIDDEN',
+            message: 'Bu işlem için yetkiniz yok',
+          },
+        },
         { status: 403 }
       );
     }
 
-    // Update user role
-    const { data, error } = await supabase
-      .from('users')
-      .update({ role })
-      .eq('id', userId)
-      .select()
-      .single();
+    // Get query parameters (reuse searchParams from above)
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '50');
+    const search = searchParams.get('search') || undefined;
+    const role = searchParams.get('role') as 'employee' | 'admin' | undefined;
+    const storeCode = searchParams.get('storeCode')
+      ? parseInt(searchParams.get('storeCode')!)
+      : undefined;
 
-    if (error) {
-      console.error('Error updating user role:', error);
-      return NextResponse.json(
-        { error: { code: 'SERVER_ERROR', message: 'Rol güncellenemedi' } },
-        { status: 500 }
-      );
-    }
+    // Get user list
+    const result = await getUserList({
+      page,
+      limit,
+      search,
+      role,
+      storeCode,
+    });
 
-    return NextResponse.json({ data });
+    return NextResponse.json({
+      data: result,
+    });
   } catch (error) {
-    console.error('Error in users update:', error);
+    console.error('Get users error:', error);
     return NextResponse.json(
-      { error: { code: 'SERVER_ERROR', message: 'Sunucu hatası' } },
+      {
+        error: {
+          code: 'INTERNAL_ERROR',
+          message: 'Kullanıcılar yüklenirken bir hata oluştu',
+        },
+      },
       { status: 500 }
     );
   }

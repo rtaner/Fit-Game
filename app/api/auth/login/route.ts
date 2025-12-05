@@ -21,6 +21,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Check if user needs to change password
+    if (result.user && result.user.force_password_change) {
+      return NextResponse.json({
+        data: {
+          ...result.user,
+          requirePasswordChange: true,
+        },
+      });
+    }
+
     return NextResponse.json({ data: result.user });
   } catch (error) {
     if (error instanceof z.ZodError) {

@@ -9,6 +9,9 @@ export interface User {
   longest_streak: number;
   last_login_date: string | null;
   active_badge_id: string | null;
+  reset_token: string | null;
+  reset_token_expires: string | null;
+  force_password_change: boolean;
   created_at: string;
   updated_at: string;
 }

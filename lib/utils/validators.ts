@@ -1,10 +1,11 @@
 import { z } from 'zod';
 
 /**
- * Validates store code is between 1500-1900 inclusive
+ * Validates store code is a positive integer
+ * Range validation removed - stores are now selected from dropdown
  */
 export function validateStoreCode(code: number): boolean {
-  return Number.isInteger(code) && code >= 1500 && code <= 1900;
+  return Number.isInteger(code) && code > 0;
 }
 
 /**
@@ -13,8 +14,7 @@ export function validateStoreCode(code: number): boolean {
 export const storeCodeSchema = z
   .number()
   .int()
-  .min(1500, 'Mağaza kodu en az 1500 olmalıdır')
-  .max(1900, 'Mağaza kodu en fazla 1900 olmalıdır');
+  .positive('Geçerli bir mağaza seçiniz');
 
 /**
  * Zod schema for user registration

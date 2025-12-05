@@ -23,7 +23,7 @@ const registerSchema = z.object({
     .regex(/^[a-zA-Z0-9_]+$/, 'Kullanıcı adı sadece harf, rakam ve alt çizgi içerebilir'),
   password: z.string().min(6, 'Şifre en az 6 karakter olmalıdır'),
   confirmPassword: z.string().min(6, 'Şifre en az 6 karakter olmalıdır'),
-  storeCode: z.number().int().min(1500, 'Mağaza kodu en az 1500 olmalıdır').max(1900, 'Mağaza kodu en fazla 1900 olmalıdır'),
+  storeCode: z.number().int().positive('Mağaza seçimi gereklidir'),
 }).refine((data) => data.password === data.confirmPassword, {
   message: 'Şifreler eşleşmiyor',
   path: ['confirmPassword'],

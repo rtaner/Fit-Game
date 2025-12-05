@@ -44,6 +44,13 @@ export default function LoginPage() {
         localStorage.setItem('current-user', JSON.stringify(result.user));
       }
       
+      // Check if user needs to change password
+      if ((result.user as any).requirePasswordChange || result.user.force_password_change) {
+        router.push('/change-password');
+        setIsLoading(false);
+        return;
+      }
+      
       // Update streak on login
       try {
         await useAuthStore.getState().updateStreak(result.user.id);
@@ -174,9 +181,9 @@ export default function LoginPage() {
 
           {/* Forgot Password */}
           <div className="text-right">
-            <button type="button" className="text-sm text-mavi-navy font-medium hover:underline">
+            <a href="/reset-password" className="text-sm text-mavi-navy font-medium hover:underline">
               Şifremi Unuttum
-            </button>
+            </a>
           </div>
 
           {/* Error Message */}

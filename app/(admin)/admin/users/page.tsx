@@ -4,6 +4,9 @@ import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { AdminSidebar } from '@/components/organisms/AdminSidebar';
 import { AdminGuard } from '@/components/organisms/AdminGuard';
+import { PasswordResetModal } from '@/components/admin/PasswordResetModal';
+import { DeleteConfirmationModal } from '@/components/admin/DeleteConfirmationModal';
+import { Key, Ticket, Trash2 } from 'lucide-react';
 
 interface User {
   id: string;
@@ -20,20 +23,160 @@ export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+  // Password Reset Modal State
+  const [resetModal, setResetModal] = useState<{
+    isOpen: boolean;
+    type: 'password' | 'token';
+    value: string;
+    expiresAt?: string;
+    username: string;
+  }>({
+    isOpen: false,
+    type: 'password',
+    value: '',
+    username: '',
+  });
+
+  // Delete Confirmation Modal State
+  const [deleteModal, setDeleteModal] = useState<{
+    isOpen: boolean;
+    userId: string;
+    username: string;
+    isDeleting: boolean;
+  }>({
+    isOpen: false,
+    userId: '',
+    username: '',
+    isDeleting: false,
+  });
 
   useEffect(() => {
     fetchUsers();
   }, []);
 
+  // Show toast notification
+  const showToast = (message: string, type: 'success' | 'error') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  // Handle reset password
+  const handleResetPassword = async (userId: string, username: string) => {
+    try {
+      const userStr = localStorage.getItem('current-user');
+      if (!userStr) return;
+      const user = JSON.parse(userStr);
+
+      const response = await fetch(`/api/admin/users/${userId}/reset-password?userId=${user.id}`, {
+        method: 'POST',
+      });
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error?.message || 'Geçici şifre oluşturulamadı');
+      }
+
+      setResetModal({
+        isOpen: true,
+        type: 'password',
+        value: result.data.temporaryPassword,
+        username: result.data.username,
+      });
+
+      showToast('Geçici şifre oluşturuldu', 'success');
+      fetchUsers();
+    } catch (err: any) {
+      showToast(err.message, 'error');
+    }
+  };
+
+  // Handle generate token
+  const handleGenerateToken = async (userId: string, username: string) => {
+    try {
+      const userStr = localStorage.getItem('current-user');
+      if (!userStr) return;
+      const user = JSON.parse(userStr);
+
+      const response = await fetch(`/api/admin/users/${userId}/generate-token?userId=${user.id}`, {
+        method: 'POST',
+      });
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error?.message || 'Reset kodu oluşturulamadı');
+      }
+
+      setResetModal({
+        isOpen: true,
+        type: 'token',
+        value: result.data.resetToken,
+        expiresAt: result.data.expiresAt,
+        username: result.data.username,
+      });
+
+      showToast('Reset kodu oluşturuldu', 'success');
+    } catch (err: any) {
+      showToast(err.message, 'error');
+    }
+  };
+
+  // Handle delete user
+  const handleDeleteUser = (userId: string, username: string) => {
+    setDeleteModal({
+      isOpen: true,
+      userId,
+      username,
+      isDeleting: false,
+    });
+  };
+
+  // Confirm delete user
+  const confirmDeleteUser = async () => {
+    setDeleteModal((prev) => ({ ...prev, isDeleting: true }));
+
+    try {
+      const userStr = localStorage.getItem('current-user');
+      if (!userStr) return;
+      const user = JSON.parse(userStr);
+
+      const response = await fetch(`/api/admin/users/${deleteModal.userId}?userId=${user.id}`, {
+        method: 'DELETE',
+      });
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error?.message || 'Kullanıcı silinemedi');
+      }
+
+      showToast('Kullanıcı başarıyla silindi', 'success');
+      setDeleteModal({ isOpen: false, userId: '', username: '', isDeleting: false });
+      fetchUsers();
+    } catch (err: any) {
+      showToast(err.message, 'error');
+      setDeleteModal((prev) => ({ ...prev, isDeleting: false }));
+    }
+  };
+
   const fetchUsers = async () => {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await fetch('/api/admin/users');
+      // Get current user ID from localStorage
+      const userStr = localStorage.getItem('current-user');
+      if (!userStr) {
+        setError('Oturum bulunamadı');
+        setIsLoading(false);
+        return;
+      }
+      const user = JSON.parse(userStr);
+
+      const response = await fetch(`/api/admin/users?userId=${user.id}`);
       const result = await response.json();
 
       if (response.ok) {
-        setUsers(result.data);
+        setUsers(result.data.users || result.data);
       } else {
         setError(result.error?.message || 'Kullanıcılar yüklenemedi');
       }
@@ -138,21 +281,51 @@ export default function UsersPage() {
                   </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm">
-                  {user.role === 'employee' ? (
+                  <div className="flex gap-2">
+                    {/* Role Change Button */}
+                    {user.role === 'employee' ? (
+                      <button
+                        onClick={() => handleRoleChange(user.id, 'admin')}
+                        className="text-blue-600 hover:text-blue-900 px-2 py-1 rounded hover:bg-blue-50"
+                      >
+                        Admin Yap
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handleRoleChange(user.id, 'employee')}
+                        className="text-orange-600 hover:text-orange-900 px-2 py-1 rounded hover:bg-orange-50"
+                      >
+                        Çalışan Yap
+                      </button>
+                    )}
+                    
+                    {/* Password Reset Button */}
                     <button
-                      onClick={() => handleRoleChange(user.id, 'admin')}
-                      className="text-blue-600 hover:text-blue-900"
+                      onClick={() => handleResetPassword(user.id, user.username)}
+                      className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded"
+                      title="Geçici Şifre Oluştur"
                     >
-                      Admin Yap
+                      <Key className="h-4 w-4" />
                     </button>
-                  ) : (
+                    
+                    {/* Generate Token Button */}
                     <button
-                      onClick={() => handleRoleChange(user.id, 'employee')}
-                      className="text-orange-600 hover:text-orange-900"
+                      onClick={() => handleGenerateToken(user.id, user.username)}
+                      className="p-2 text-gray-600 hover:text-green-600 hover:bg-green-50 rounded"
+                      title="Reset Kodu Oluştur"
                     >
-                      Çalışan Yap
+                      <Ticket className="h-4 w-4" />
                     </button>
-                  )}
+                    
+                    {/* Delete User Button */}
+                    <button
+                      onClick={() => handleDeleteUser(user.id, user.username)}
+                      className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded"
+                      title="Kullanıcıyı Sil"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -168,6 +341,38 @@ export default function UsersPage() {
         </p>
       </div>
       </div>
+
+      {/* Password Reset Modal */}
+      <PasswordResetModal
+        isOpen={resetModal.isOpen}
+        onClose={() => setResetModal((prev) => ({ ...prev, isOpen: false }))}
+        type={resetModal.type}
+        value={resetModal.value}
+        expiresAt={resetModal.expiresAt}
+        username={resetModal.username}
+      />
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        isOpen={deleteModal.isOpen}
+        onClose={() => setDeleteModal({ isOpen: false, userId: '', username: '', isDeleting: false })}
+        onConfirm={confirmDeleteUser}
+        username={deleteModal.username}
+        isDeleting={deleteModal.isDeleting}
+      />
+
+      {/* Toast Notification */}
+      {toast && (
+        <div
+          className={`fixed bottom-6 right-6 px-6 py-4 rounded-lg shadow-lg z-50 ${
+            toast.type === 'success'
+              ? 'bg-green-600 text-white'
+              : 'bg-red-600 text-white'
+          }`}
+        >
+          {toast.message}
+        </div>
+      )}
     </AdminGuard>
   );
 }
