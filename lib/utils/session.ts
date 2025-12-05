@@ -7,7 +7,7 @@ import type { User } from '@/types/database.types';
  */
 export async function getCurrentUserFromSession(): Promise<User | null> {
   try {
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     const userCookie = cookieStore.get('user');
 
     if (!userCookie) {
