@@ -1,11 +1,37 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { uploadImage } from '@/lib/cloudinary/upload';
 
+// Force Node.js runtime to avoid body consumption issues
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: NextRequest) {
+  // Check if body is already consumed
+  if (request.bodyUsed) {
+    console.error('Request body already consumed (hot reload issue)');
+    return NextResponse.json(
+      { error: { code: 'PARSE_ERROR', message: 'Form verisi okunamadı. Lütfen tekrar deneyin.' } },
+      { status: 400 }
+    );
+  }
+
+  let formData: FormData;
+  
   try {
-    const formData = await request.formData();
+    formData = await request.formData();
+  } catch (error) {
+    // This error happens when Next.js hot reload tries to re-process the request
+    console.error('FormData parse error (likely hot reload):', error instanceof Error ? error.message : error);
+    return NextResponse.json(
+      { error: { code: 'PARSE_ERROR', message: 'Form verisi okunamadı. Lütfen tekrar deneyin.' } },
+      { status: 400 }
+    );
+  }
+
+  try {
     const file = formData.get('file') as File;
     const customFilename = formData.get('filename') as string | null;
+    const folder = formData.get('folder') as string | null;
 
     if (!file) {
       return NextResponse.json(
@@ -30,7 +56,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const result = await uploadImage(file, 'mavi-fit-game/questions', customFilename || undefined);
+    // Determine upload folder
+    const uploadFolder = folder === 'badges' 
+      ? 'mavi-fit-game/badges' 
+      : 'mavi-fit-game/questions';
+
+    const result = await uploadImage(file, uploadFolder, customFilename || undefined);
 
     return NextResponse.json({
       data: {
@@ -42,8 +73,15 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('Upload error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Resim yüklenemedi';
     return NextResponse.json(
-      { error: { code: 'UPLOAD_ERROR', message: 'Resim yüklenemedi' } },
+      { 
+        error: { 
+          code: 'UPLOAD_ERROR', 
+          message: errorMessage,
+          details: error instanceof Error ? error.stack : String(error)
+        } 
+      },
       { status: 500 }
     );
   }

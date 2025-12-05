@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
         badge: {
           name: unlock.badge.name,
           description: unlock.badge.description,
-          emoji: unlock.badge.emoji,
+          image_url: unlock.badge.image_url,
           tier: unlock.badge.tier,
         },
         tierUnlocked: unlock.progress.tier_unlocked,

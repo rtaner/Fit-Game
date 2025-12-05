@@ -43,6 +43,14 @@ export default function LoginPage() {
       if (typeof window !== 'undefined') {
         localStorage.setItem('current-user', JSON.stringify(result.user));
       }
+      
+      // Update streak on login
+      try {
+        await useAuthStore.getState().updateStreak(result.user.id);
+      } catch (error) {
+        console.error('Error updating streak:', error);
+      }
+      
       router.push('/dashboard');
     }
 

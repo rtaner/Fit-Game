@@ -23,7 +23,6 @@ export async function PUT(
         unlock_type: body.unlock_type,
         unlock_value: body.unlock_value,
         display_order: body.display_order,
-        updated_at: new Date().toISOString(),
       })
       .eq('id', id)
       .select()

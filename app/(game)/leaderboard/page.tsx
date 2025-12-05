@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 
 import { useAuthStore } from '@/stores/useAuthStore';
+import { BadgeAvatar } from '@/components/atoms/BadgeAvatar';
 
 interface LeaderboardEntry {
   rank: number;
@@ -18,7 +19,7 @@ interface LeaderboardEntry {
     id: string;
     code: string;
     name: string;
-    emoji: string;
+    image_url?: string | null;
   } | null;
 }
 
@@ -180,18 +181,22 @@ export default function LeaderboardPage() {
               {/* 2nd Place */}
               {topThree[1] && (
                 <div className="flex flex-col items-center">
-                  <div className="w-14 h-14 rounded-full bg-gradient-to-br from-gray-300 to-gray-400 flex items-center justify-center shadow-lg mb-2">
-                    <span className="text-white font-bold text-2xl">
-                      {activeTab === 'store' && 'storeName' in topThree[1]
-                        ? topThree[1].storeName.substring(5, 7)
-                        : 'username' in topThree[1] && 'activeBadge' in topThree[1] && topThree[1].activeBadge
-                        ? topThree[1].activeBadge.emoji
-                        : 'username' in topThree[1]
-                        ? topThree[1].username.substring(0, 2).toUpperCase()
-                        : '??'
-                      }
-                    </span>
-                  </div>
+                  {activeTab === 'store' && 'storeName' in topThree[1] ? (
+                    <div className="w-14 h-14 rounded-full bg-gradient-to-br from-gray-300 to-gray-400 flex items-center justify-center shadow-lg mb-2">
+                      <span className="text-white font-bold text-2xl">
+                        {topThree[1].storeName.substring(5, 7)}
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="mb-2">
+                      <BadgeAvatar
+                        badge={'activeBadge' in topThree[1] ? topThree[1].activeBadge : undefined}
+                        fallback={'username' in topThree[1] ? topThree[1].username.substring(0, 2).toUpperCase() : '??'}
+                        size="lg"
+                        className="shadow-lg"
+                      />
+                    </div>
+                  )}
                   <p className="text-xs font-medium text-gray-900 text-center truncate w-20">
                     {activeTab === 'store' && 'storeName' in topThree[1]
                       ? topThree[1].storeName.replace('Mavi ', '')
@@ -218,18 +223,22 @@ export default function LeaderboardPage() {
               {topThree[0] && (
                 <div className="flex flex-col items-center -mt-4">
                   <div className="relative">
-                    <div className="w-18 h-18 rounded-full bg-gradient-to-br from-amber-300 to-amber-500 flex items-center justify-center shadow-xl mb-2 ring-4 ring-amber-200" style={{width: '72px', height: '72px'}}>
-                      <span className="text-white font-bold text-3xl">
-                        {activeTab === 'store' && 'storeName' in topThree[0]
-                          ? topThree[0].storeName.substring(5, 7)
-                          : 'username' in topThree[0] && 'activeBadge' in topThree[0] && topThree[0].activeBadge
-                          ? topThree[0].activeBadge.emoji
-                          : 'username' in topThree[0]
-                          ? topThree[0].username.substring(0, 2).toUpperCase()
-                          : '??'
-                        }
-                      </span>
-                    </div>
+                    {activeTab === 'store' && 'storeName' in topThree[0] ? (
+                      <div className="w-18 h-18 rounded-full bg-gradient-to-br from-amber-300 to-amber-500 flex items-center justify-center shadow-xl mb-2 ring-4 ring-amber-200" style={{width: '72px', height: '72px'}}>
+                        <span className="text-white font-bold text-3xl">
+                          {topThree[0].storeName.substring(5, 7)}
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="mb-2 ring-4 ring-amber-200 rounded-full">
+                        <BadgeAvatar
+                          badge={'activeBadge' in topThree[0] ? topThree[0].activeBadge : undefined}
+                          fallback={'username' in topThree[0] ? topThree[0].username.substring(0, 2).toUpperCase() : '??'}
+                          size="xl"
+                          className="shadow-xl"
+                        />
+                      </div>
+                    )}
                     <div className="absolute -top-2 left-1/2 -translate-x-1/2">
                       <svg className="w-6 h-6 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
                         <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
@@ -261,18 +270,22 @@ export default function LeaderboardPage() {
               {/* 3rd Place */}
               {topThree[2] && (
                 <div className="flex flex-col items-center">
-                  <div className="w-14 h-14 rounded-full bg-gradient-to-br from-orange-300 to-orange-500 flex items-center justify-center shadow-lg mb-2">
-                    <span className="text-white font-bold text-2xl">
-                      {activeTab === 'store' && 'storeName' in topThree[2]
-                        ? topThree[2].storeName.substring(5, 7)
-                        : 'username' in topThree[2] && 'activeBadge' in topThree[2] && topThree[2].activeBadge
-                        ? topThree[2].activeBadge.emoji
-                        : 'username' in topThree[2]
-                        ? topThree[2].username.substring(0, 2).toUpperCase()
-                        : '??'
-                      }
-                    </span>
-                  </div>
+                  {activeTab === 'store' && 'storeName' in topThree[2] ? (
+                    <div className="w-14 h-14 rounded-full bg-gradient-to-br from-orange-300 to-orange-500 flex items-center justify-center shadow-lg mb-2">
+                      <span className="text-white font-bold text-2xl">
+                        {topThree[2].storeName.substring(5, 7)}
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="mb-2">
+                      <BadgeAvatar
+                        badge={'activeBadge' in topThree[2] ? topThree[2].activeBadge : undefined}
+                        fallback={'username' in topThree[2] ? topThree[2].username.substring(0, 2).toUpperCase() : '??'}
+                        size="lg"
+                        className="shadow-lg"
+                      />
+                    </div>
+                  )}
                   <p className="text-xs font-medium text-gray-900 text-center truncate w-20">
                     {activeTab === 'store' && 'storeName' in topThree[2]
                       ? topThree[2].storeName.replace('Mavi ', '')
@@ -325,15 +338,19 @@ export default function LeaderboardPage() {
                         {rank}
                       </div>
 
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center text-xl font-semibold ${
-                        isHighlighted ? 'bg-mavi-navy text-white' : 'bg-gray-100 text-gray-900'
-                      }`}>
-                        {'username' in entry && 'activeBadge' in entry && entry.activeBadge
-                          ? entry.activeBadge.emoji
-                          : 'username' in entry 
-                          ? entry.username.substring(0, 2).toUpperCase() 
-                          : entry.storeName.substring(0, 2).toUpperCase()}
-                      </div>
+                      {'username' in entry && 'activeBadge' in entry ? (
+                        <BadgeAvatar
+                          badge={entry.activeBadge}
+                          fallback={entry.username.substring(0, 2).toUpperCase()}
+                          size="sm"
+                        />
+                      ) : (
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center text-xl font-semibold ${
+                          isHighlighted ? 'bg-mavi-navy text-white' : 'bg-gray-100 text-gray-900'
+                        }`}>
+                          {entry.storeName.substring(0, 2).toUpperCase()}
+                        </div>
+                      )}
 
                       <div className="flex-1 min-w-0">
                         <p className={`text-sm font-medium truncate ${isHighlighted ? 'text-mavi-navy' : 'text-gray-900'}`}>
@@ -379,11 +396,11 @@ export default function LeaderboardPage() {
                         {entry.rank}
                       </div>
 
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center text-xl font-semibold ${
-                        isHighlighted ? 'bg-mavi-navy text-white' : 'bg-gray-100 text-gray-900'
-                      }`}>
-                        {entry.activeBadge ? entry.activeBadge.emoji : entry.username.substring(0, 2).toUpperCase()}
-                      </div>
+                      <BadgeAvatar
+                        badge={entry.activeBadge}
+                        fallback={entry.username.substring(0, 2).toUpperCase()}
+                        size="sm"
+                      />
 
                       <div className="flex-1 min-w-0">
                         <p className={`text-sm font-medium truncate ${isHighlighted ? 'text-mavi-navy' : 'text-gray-900'}`}>

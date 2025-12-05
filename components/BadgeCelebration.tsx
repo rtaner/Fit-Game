@@ -1,14 +1,16 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { getBadgeImageUrl } from '@/lib/cloudinary';
+import { createClient } from '@/lib/supabase/client';
 
 interface Badge {
   badgeCode: string;
   badge: {
     name: string;
     description: string;
-    emoji: string;
+    image_url?: string | null;
     tier?: string;
   };
   tierUnlocked?: string;
@@ -19,26 +21,60 @@ interface Badge {
 interface BadgeCelebrationProps {
   unlockedBadges: Badge[];
   onClose: () => void;
+  userId?: string;
 }
 
-export default function BadgeCelebration({ unlockedBadges, onClose }: BadgeCelebrationProps) {
+export default function BadgeCelebration({ unlockedBadges, onClose, userId }: BadgeCelebrationProps) {
   const [currentBadgeIndex, setCurrentBadgeIndex] = useState(0);
   const [showConfetti, setShowConfetti] = useState(true);
+  const [settingActive, setSettingActive] = useState(false);
 
-  useEffect(() => {
-    if (unlockedBadges.length === 0) return;
+  console.log('🎊 BadgeCelebration rendered!', { 
+    badgeCount: unlockedBadges.length, 
+    userId,
+    currentBadge: unlockedBadges[currentBadgeIndex]
+  });
 
-    // Auto-advance to next badge after 3 seconds
-    const timer = setTimeout(() => {
-      if (currentBadgeIndex < unlockedBadges.length - 1) {
-        setCurrentBadgeIndex(prev => prev + 1);
-      } else {
-        onClose();
+  const setActiveBadge = async (badgeCode: string) => {
+    if (!userId) return;
+
+    setSettingActive(true);
+    try {
+      // Find the badge progress ID for this badge
+      const response = await fetch(`/api/badges?userId=${userId}`);
+      if (!response.ok) {
+        console.error('Failed to fetch badges');
+        return;
       }
-    }, 3000);
 
-    return () => clearTimeout(timer);
-  }, [currentBadgeIndex, unlockedBadges.length, onClose]);
+      const result = await response.json();
+      const badge = result.data.badges.find((b: any) => b.code === badgeCode);
+      
+      if (!badge || !badge.userProgress.id) {
+        console.error('Badge progress not found');
+        return;
+      }
+
+      // Set as active badge
+      const supabase = createClient();
+      
+      const { error } = await supabase
+        .from('users')
+        .update({ active_badge_id: badge.userProgress.id })
+        .eq('id', userId);
+
+      if (error) {
+        console.error('Error setting active badge:', error);
+        return;
+      }
+
+      console.log('✅ Badge set as active!');
+    } catch (error) {
+      console.error('Error setting active badge:', error);
+    } finally {
+      setSettingActive(false);
+    }
+  };
 
   if (unlockedBadges.length === 0) return null;
 
@@ -97,9 +133,23 @@ export default function BadgeCelebration({ unlockedBadges, onClose }: BadgeCeleb
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ delay: 0.2, type: 'spring', damping: 10 }}
-            className="text-8xl mb-4"
+            className="mb-4 flex items-center justify-center"
           >
-            {currentBadge.badge.emoji}
+            {currentBadge.badge.image_url ? (
+              <div className="w-32 h-32 rounded-full shadow-2xl flex items-center justify-center overflow-hidden">
+                <img
+                  src={getBadgeImageUrl(currentBadge.badge.image_url, 'large') || currentBadge.badge.image_url}
+                  alt={currentBadge.badge.name}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            ) : (
+              <div className="w-32 h-32 rounded-full bg-gradient-to-br from-gray-300 to-gray-400 shadow-2xl flex items-center justify-center">
+                <span className="text-white font-bold text-4xl">
+                  {currentBadge.badge.name.substring(0, 2).toUpperCase()}
+                </span>
+              </div>
+            )}
           </motion.div>
 
           {/* Badge Title */}
@@ -165,11 +215,42 @@ export default function BadgeCelebration({ unlockedBadges, onClose }: BadgeCeleb
             </motion.div>
           )}
 
+          {/* Set as Active Badge Button */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6 }}
+            className="mb-4"
+          >
+            <button
+              onClick={() => setActiveBadge(currentBadge.badgeCode)}
+              disabled={settingActive}
+              className="w-full bg-gradient-to-r from-amber-500 to-orange-500 text-white py-3 px-6 rounded-2xl font-bold hover:from-amber-600 hover:to-orange-600 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {settingActive ? 'Ayarlanıyor...' : '⭐ Aktif Rozet Olarak Ayarla'}
+            </button>
+            <p className="text-xs text-gray-500 mt-2">
+              Bu rozeti profil resmin olarak kullan
+            </p>
+          </motion.div>
+
+          {/* Info Message */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.7 }}
+            className="bg-blue-50 border border-blue-200 rounded-xl p-3 mb-4"
+          >
+            <p className="text-xs text-blue-800">
+              💡 <strong>İpucu:</strong> Profil sayfandaki rozet vitrininden dilediğin rozeti aktif rozet olarak seçip profil resmi yapabilirsin.
+            </p>
+          </motion.div>
+
           {/* Action Buttons */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.7 }}
+            transition={{ delay: 0.8 }}
             className="flex gap-3"
           >
             {currentBadgeIndex < unlockedBadges.length - 1 ? (
@@ -192,7 +273,7 @@ export default function BadgeCelebration({ unlockedBadges, onClose }: BadgeCeleb
                 onClick={onClose}
                 className="w-full bg-gradient-to-r from-blue-500 to-purple-500 text-white py-3 px-6 rounded-2xl font-bold hover:from-blue-600 hover:to-purple-600 transition-all active:scale-95"
               >
-                Harika! 🎉
+                Devam Et 🎉
               </button>
             )}
           </motion.div>

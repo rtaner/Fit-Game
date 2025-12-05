@@ -7,6 +7,7 @@ import { ArrowLeft } from 'lucide-react';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { createClient } from '@/lib/supabase/client';
 import { getBadgeImageUrl } from '@/lib/cloudinary';
+import { BadgeAvatar } from '@/components/atoms/BadgeAvatar';
 
 interface Badge {
   id: string;
@@ -15,7 +16,6 @@ interface Badge {
   description: string;
   category: string;
   tier?: string;
-  emoji: string;
   image_url?: string | null;
   isHidden: boolean;
   unlockType: string;
@@ -120,6 +120,9 @@ export default function BadgesPage() {
       setActiveBadgeId(badgeProgressId);
       showToast('Rozet aktif olarak ayarlandı! 🎉', 'success');
       await loadBadges();
+      
+      // Trigger a router refresh to update other pages
+      router.refresh();
     } catch (error) {
       console.error('Error setting active badge:', error);
       showToast('Bir hata oluştu', 'error');
@@ -239,25 +242,16 @@ export default function BadgesPage() {
                     >
                       <div className="flex items-center gap-4">
                         {/* Badge Icon */}
-                        <div
-                          className={`w-14 h-14 rounded-2xl flex items-center justify-center text-2xl shrink-0 overflow-hidden ${
-                            isUnlocked
-                              ? 'bg-gradient-to-br from-amber-400 to-amber-500 shadow-lg shadow-amber-400/30'
-                              : 'bg-gray-100'
-                          }`}
-                        >
+                        <div className="shrink-0">
                           {isUnlocked ? (
-                            badge.image_url ? (
-                              <img
-                                src={getBadgeImageUrl(badge.image_url, 'small') || badge.image_url}
-                                alt={badge.name}
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              badge.emoji
-                            )
+                            <BadgeAvatar
+                              badge={badge}
+                              size="lg"
+                            />
                           ) : (
-                            '🔒'
+                            <div className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center text-2xl">
+                              🔒
+                            </div>
                           )}
                         </div>
 

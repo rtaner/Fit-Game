@@ -31,6 +31,7 @@ export default function PlayPage({ params }: { params: Promise<{ categoryId: str
   const [isCorrect, setIsCorrect] = useState(false);
   const [lifeline50Used, setLifeline50Used] = useState(false);
   const [lifelineSkipUsed, setLifelineSkipUsed] = useState(false);
+  const [jokerFailedThisGame, setJokerFailedThisGame] = useState(false);
   const [gameOver, setGameOver] = useState(false);
   const [fitName, setFitName] = useState<string | null>(null);
   const [explanation, setExplanation] = useState<string | null>(null);
@@ -103,14 +104,17 @@ export default function PlayPage({ params }: { params: Promise<{ categoryId: str
     setUserAnswerName(null);
     setUserAnswerExplanation('⏱️ Süre Bitti!');
     
-    setTimeout(() => {
-      // Check for badges (this will set showBadgeCelebration if badges found)
-      checkForNewBadges();
+    setTimeout(async () => {
+      // Check for badges first
+      const hasBadges = await checkForNewBadges();
       
-      // Show game over after a delay (will be overridden by badge celebration onClose if badges exist)
-      setTimeout(() => {
-        setGameOver(true);
-      }, 500);
+      // Only show game over if no badges were unlocked
+      // If badges exist, game over will be shown after badge celebration closes
+      if (!hasBadges) {
+        setTimeout(() => {
+          setGameOver(true);
+        }, 500);
+      }
     }, 1000);
   };
 
@@ -192,6 +196,11 @@ export default function PlayPage({ params }: { params: Promise<{ categoryId: str
         }
 
         if (!result.data.isCorrect) {
+          // Track if joker was used and failed
+          if (lifeline50Used) {
+            setJokerFailedThisGame(true);
+          }
+          
           // Find user's selected answer details from question options
           const userSelectedOption = question.options.find(opt => opt.id === answerId);
           
@@ -202,14 +211,17 @@ export default function PlayPage({ params }: { params: Promise<{ categoryId: str
           setUserAnswerExplanation(result.data.userAnswerExplanation ?? null);
           
           // Kırmızı rengi göstermek için kısa bir gecikme
-          setTimeout(() => {
-            // Check for badges (this will set showBadgeCelebration if badges found)
-            checkForNewBadges();
+          setTimeout(async () => {
+            // Check for badges first
+            const hasBadges = await checkForNewBadges();
             
-            // Show game over after a delay (will be overridden by badge celebration onClose if badges exist)
-            setTimeout(() => {
-              setGameOver(true);
-            }, 500);
+            // Only show game over if no badges were unlocked
+            // If badges exist, game over will be shown after badge celebration closes
+            if (!hasBadges) {
+              setTimeout(() => {
+                setGameOver(true);
+              }, 500);
+            }
           }, 1000);
         } else {
           setTimeout(() => {
@@ -307,8 +319,8 @@ export default function PlayPage({ params }: { params: Promise<{ categoryId: str
     );
   }
 
-  const checkForNewBadges = async () => {
-    if (!user || !sessionId) return;
+  const checkForNewBadges = async (): Promise<boolean> => {
+    if (!user || !sessionId) return false;
 
     try {
       const response = await fetch('/api/badges/check', {
@@ -325,7 +337,7 @@ export default function PlayPage({ params }: { params: Promise<{ categoryId: str
             averageResponseTime: 3000, // TODO: Track actual response time
             timeLeft: timeLeft,
             jokerUsed: lifeline50Used,
-            jokerFailed: lifeline50Used && !isCorrect, // If joker was used and still failed
+            jokerFailed: jokerFailedThisGame, // Track if joker was used and game ended with wrong answer
             isGameEnd: true,
           }
         }),
@@ -342,11 +354,14 @@ export default function PlayPage({ params }: { params: Promise<{ categoryId: str
         setUnlockedBadges(result.data.unlockedBadges);
         setShowBadgeCelebration(true);
         console.log('🎉 Badge celebration should show now!');
+        return true; // Badges found
       } else {
         console.log('❌ No new badges to show');
+        return false; // No badges
       }
     } catch (error) {
       console.error('Error checking badges:', error);
+      return false;
     }
   };
 
@@ -413,6 +428,7 @@ export default function PlayPage({ params }: { params: Promise<{ categoryId: str
     setPointsEarned(0);
     setStreakLevel({ level: 'Başlangıç', emoji: '💪', color: 'gray' });
     setUnlockedBadges([]);
+    setJokerFailedThisGame(false);
     setShowBadgeCelebration(false);
     setSelectedAnswer(null);
     setShowResult(false);
@@ -702,6 +718,7 @@ export default function PlayPage({ params }: { params: Promise<{ categoryId: str
       {showBadgeCelebration && unlockedBadges.length > 0 && (
         <BadgeCelebration
           unlockedBadges={unlockedBadges}
+          userId={user?.id}
           onClose={() => {
             setShowBadgeCelebration(false);
             setUnlockedBadges([]);

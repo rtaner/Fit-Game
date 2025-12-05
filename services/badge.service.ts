@@ -9,6 +9,7 @@ export interface BadgeDefinition {
   category: string;
   tier: string | null;
   emoji: string;
+  image_url: string | null;
   is_hidden: boolean;
   unlock_type: string;
   unlock_value: number;

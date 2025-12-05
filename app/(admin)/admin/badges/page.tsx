@@ -89,23 +89,60 @@ export default function BadgesAdminPage() {
     setError(null);
 
     try {
+      // Clean filename - remove Turkish characters and special chars
+      const cleanFileName = file.name
+        .toLowerCase()
+        .replace(/ğ/g, 'g')
+        .replace(/ü/g, 'u')
+        .replace(/ş/g, 's')
+        .replace(/ı/g, 'i')
+        .replace(/ö/g, 'o')
+        .replace(/ç/g, 'c')
+        .replace(/[^a-z0-9.]/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-|-$/g, '');
+
+      // Create new file with cleaned name
+      const cleanedFile = new File([file], cleanFileName, { type: file.type });
+
       const uploadFormData = new FormData();
-      uploadFormData.append('file', file);
+      uploadFormData.append('file', cleanedFile);
       uploadFormData.append('folder', 'badges');
 
-      const response = await fetch('/api/admin/upload', {
+      let response = await fetch('/api/admin/upload', {
         method: 'POST',
         body: uploadFormData,
       });
 
-      const result = await response.json();
+      let result = await response.json();
+
+      // If parse error (hot reload issue), retry once
+      if (!response.ok && result.error?.code === 'PARSE_ERROR') {
+        console.log('Parse error detected, retrying upload...');
+        await new Promise(resolve => setTimeout(resolve, 500)); // Wait 500ms
+        
+        // Recreate FormData for retry
+        const retryFormData = new FormData();
+        retryFormData.append('file', cleanedFile);
+        retryFormData.append('folder', 'badges');
+        
+        response = await fetch('/api/admin/upload', {
+          method: 'POST',
+          body: retryFormData,
+        });
+        
+        result = await response.json();
+      }
 
       if (!response.ok) {
+        console.error('Upload error:', result);
         throw new Error(result.error?.message || 'Yükleme başarısız');
       }
 
+      console.log('Upload success:', result);
       setFormData({ ...formData, image_url: result.data.url });
     } catch (err) {
+      console.error('Upload exception:', err);
       setError(err instanceof Error ? err.message : 'Yükleme hatası');
     } finally {
       setUploading(false);
@@ -173,8 +210,10 @@ export default function BadgesAdminPage() {
     });
     setShowForm(true);
     
-    // Scroll to top smoothly
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    // Scroll to top after state update
+    setTimeout(() => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, 100);
   };
 
 
@@ -442,14 +481,16 @@ export default function BadgesAdminPage() {
                     >
                       <div className="flex items-center gap-4">
                         {/* Badge Image/Emoji */}
-                        <div className="w-16 h-16 rounded-lg bg-gradient-to-br from-amber-400 to-amber-500 flex items-center justify-center text-2xl shrink-0 overflow-hidden">
+                        <div className={`w-16 h-16 rounded-full flex items-center justify-center text-2xl shrink-0 overflow-hidden ${
+                          badge.image_url ? '' : 'bg-gradient-to-br from-amber-400 to-amber-500'
+                        }`}>
                           {badge.image_url ? (
                             <div className="relative w-full h-full">
                               <Image
                                 src={getBadgeImageUrl(badge.image_url, 'small') || badge.image_url}
                                 alt={badge.name}
                                 fill
-                                className="object-cover rounded-lg"
+                                className="object-cover"
                               />
                             </div>
                           ) : (

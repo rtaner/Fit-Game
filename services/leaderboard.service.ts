@@ -12,7 +12,7 @@ export interface LeaderboardEntry {
     id: string;
     code: string;
     name: string;
-    emoji: string;
+    image_url?: string | null;
   } | null;
 }
 
@@ -109,7 +109,7 @@ export const leaderboardService = {
       .filter((id): id is string => id !== null);
 
     // Fetch badge details for all active badges
-    const badgeMap = new Map<string, { id: string; code: string; name: string; emoji: string }>();
+    const badgeMap = new Map<string, { id: string; code: string; name: string; image_url?: string | null }>();
     
     if (activeBadgeIds.length > 0) {
       const { data: badgeProgress } = await supabase
@@ -121,7 +121,7 @@ export const leaderboardService = {
         const badgeCodes = badgeProgress.map(bp => bp.badge_code);
         const { data: badgeDefinitions } = await supabase
           .from('badge_definitions')
-          .select('id, code, name, emoji')
+          .select('id, code, name, image_url')
           .in('code', badgeCodes);
 
         if (badgeDefinitions) {
@@ -136,7 +136,7 @@ export const leaderboardService = {
                 id: def.id,
                 code: def.code,
                 name: def.name,
-                emoji: def.emoji,
+                image_url: def.image_url,
               });
             }
           });

@@ -7,6 +7,7 @@ import { LogOut } from 'lucide-react';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { createClient } from '@/lib/supabase/client';
 import { storeService } from '@/services/store.service';
+import { BadgeAvatar } from '@/components/atoms/BadgeAvatar';
 
 interface UserStats {
   totalGames: number;
@@ -20,7 +21,7 @@ interface UserStats {
     code: string;
     name: string;
     description: string;
-    emoji: string;
+    image_url?: string | null;
     category: string;
   } | null;
 }
@@ -37,7 +38,7 @@ interface Badge {
   description: string;
   category: string;
   tier?: string;
-  emoji: string;
+  image_url?: string | null;
   isHidden: boolean;
   unlockType: string;
   unlockValue: number;
@@ -64,6 +65,25 @@ export default function ProfilePage() {
       return;
     }
     loadProfileData();
+
+    // Reload when page becomes visible (e.g., after navigating back from badges page)
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        loadProfileData();
+      }
+    };
+
+    const handleFocus = () => {
+      loadProfileData();
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+    };
   }, [user]);
 
   const loadProfileData = async () => {
@@ -115,7 +135,7 @@ export default function ProfilePage() {
         if (badgeProgress) {
           const { data: badgeDefinition } = await supabase
             .from('badge_definitions')
-            .select('id, code, name, description, emoji, category')
+            .select('id, code, name, description, image_url, category')
             .eq('code', badgeProgress.badge_code)
             .single();
 
@@ -277,15 +297,11 @@ export default function ProfilePage() {
             className="bg-white rounded-3xl p-5 shadow-lg border border-gray-100/50"
           >
             <div className="flex items-center gap-4">
-              <div className="w-16 h-16 rounded-full bg-mavi-navy flex items-center justify-center shadow-lg shadow-mavi-navy/20">
-                {stats?.activeBadge ? (
-                  <span className="text-3xl">{stats.activeBadge.emoji}</span>
-                ) : (
-                  <span className="text-white font-bold text-xl">
-                    {user?.first_name?.[0]}{user?.last_name?.[0]}
-                  </span>
-                )}
-              </div>
+              <BadgeAvatar
+                badge={stats?.activeBadge}
+                fallback={`${user?.first_name?.[0] || ''}${user?.last_name?.[0] || ''}`}
+                size="xl"
+              />
               <div className="flex-1">
                 <h2 className="text-lg font-bold text-gray-900">
                   {user?.first_name} {user?.last_name}
@@ -429,13 +445,17 @@ export default function ProfilePage() {
                         AKTİF
                       </div>
                     )}
-                    <div
-                      className={`w-12 h-12 mx-auto rounded-xl flex items-center justify-center text-2xl mb-2 ${
-                        isActive ? 'bg-[#002D66]/10' :
-                        isUnlocked ? 'bg-gray-100' : 'bg-gray-100'
-                      }`}
-                    >
-                      {isUnlocked ? badge.emoji : '🔒'}
+                    <div className="mx-auto mb-2">
+                      {isUnlocked ? (
+                        <BadgeAvatar
+                          badge={badge}
+                          size="md"
+                        />
+                      ) : (
+                        <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-2xl">
+                          🔒
+                        </div>
+                      )}
                     </div>
                     <p className="text-xs font-medium text-gray-900 truncate">
                       {isHidden ? '???' : badge.name}

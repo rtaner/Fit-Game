@@ -84,7 +84,7 @@ export async function registerServer(data: RegisterData): Promise<AuthResponse> 
     // Hash password
     const passwordHash = await bcrypt.hash(data.password, 12);
 
-    // Create user
+    // Create user with initial streak of 1 (first day)
     const { data: newUser, error } = await supabase
       .from('users')
       .insert({
@@ -94,6 +94,9 @@ export async function registerServer(data: RegisterData): Promise<AuthResponse> 
         password_hash: passwordHash,
         store_code: data.storeCode,
         role: 'employee',
+        current_streak: 1,
+        longest_streak: 1,
+        last_login_date: new Date().toISOString().split('T')[0],
       })
       .select()
       .single();

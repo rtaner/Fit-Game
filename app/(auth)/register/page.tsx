@@ -81,6 +81,14 @@ export default function RegisterPage() {
       if (typeof window !== 'undefined') {
         localStorage.setItem('current-user', JSON.stringify(result.user));
       }
+      
+      // Update streak for first login
+      try {
+        await useAuthStore.getState().updateStreak(result.user.id);
+      } catch (error) {
+        console.error('Error updating streak:', error);
+      }
+      
       router.push('/dashboard');
     }
 

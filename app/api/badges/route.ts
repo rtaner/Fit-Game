@@ -70,7 +70,7 @@ export async function GET(request: NextRequest) {
         description: badge.description,
         category: badge.category,
         tier: badge.tier,
-        emoji: badge.emoji,
+        image_url: badge.image_url,
         isHidden: badge.is_hidden,
         unlockType: badge.unlock_type,
         unlockValue: badge.unlock_value,

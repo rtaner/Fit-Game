@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
         // Get badge definition
         const { data: badgeDefinition } = await supabase
           .from('badge_definitions')
-          .select('id, code, name, description, emoji, category')
+          .select('id, code, name, description, image_url, category')
           .eq('code', badgeProgress.badge_code)
           .single();
 
@@ -60,7 +60,7 @@ export async function GET(request: NextRequest) {
             code: badgeDefinition.code,
             name: badgeDefinition.name,
             description: badgeDefinition.description,
-            emoji: badgeDefinition.emoji,
+            image_url: badgeDefinition.image_url,
             category: badgeDefinition.category,
           };
         }

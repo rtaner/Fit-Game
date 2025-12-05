@@ -22,6 +22,7 @@ export async function GET(request: NextRequest) {
         id,
         username,
         store_code,
+        active_badge_id,
         stores(store_name),
         game_sessions(score)
       `)
@@ -36,7 +37,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Calculate highest score and total games for each user
-    const userStats = new Map<string, { username: string; storeCode: number; storeName: string; maxScore: number; totalGames: number }>();
+    const userStats = new Map<string, { username: string; storeCode: number; storeName: string; maxScore: number; totalGames: number; activeBadgeId: string | null }>();
 
     users?.forEach((user: any) => {
       if (!userStats.has(user.id)) {
@@ -47,6 +48,7 @@ export async function GET(request: NextRequest) {
           storeName: storeName,
           maxScore: 0,
           totalGames: 0,
+          activeBadgeId: user.active_badge_id || null,
         });
       }
 
@@ -63,6 +65,45 @@ export async function GET(request: NextRequest) {
       }
     });
 
+    // Get all unique active badge IDs
+    const activeBadgeIds = Array.from(userStats.values())
+      .map(u => u.activeBadgeId)
+      .filter((id): id is string => id !== null);
+
+    // Fetch badge details for all active badges
+    const badgeMap = new Map<string, { id: string; code: string; name: string; image_url?: string | null }>();
+    
+    if (activeBadgeIds.length > 0) {
+      const { data: badgeProgress } = await supabase
+        .from('user_badge_progress')
+        .select('id, badge_code')
+        .in('id', activeBadgeIds);
+
+      if (badgeProgress) {
+        const badgeCodes = badgeProgress.map(bp => bp.badge_code);
+        const { data: badgeDefinitions } = await supabase
+          .from('badge_definitions')
+          .select('id, code, name, image_url')
+          .in('code', badgeCodes);
+
+        if (badgeDefinitions) {
+          const codeToDefMap = new Map(badgeDefinitions.map(bd => [bd.code, bd]));
+          
+          badgeProgress.forEach(bp => {
+            const def = codeToDefMap.get(bp.badge_code);
+            if (def) {
+              badgeMap.set(bp.id, {
+                id: def.id,
+                code: def.code,
+                name: def.name,
+                image_url: def.image_url,
+              });
+            }
+          });
+        }
+      }
+    }
+
     // Convert to array and sort by max score
     const leaderboard = Array.from(userStats.entries())
       .map(([userId, stats]) => ({
@@ -72,6 +113,7 @@ export async function GET(request: NextRequest) {
         storeName: stats.storeName,
         score: stats.maxScore,
         totalGames: stats.totalGames,
+        activeBadge: stats.activeBadgeId ? badgeMap.get(stats.activeBadgeId) || null : null,
       }))
       .sort((a, b) => b.score - a.score)
       .map((entry, index) => ({
