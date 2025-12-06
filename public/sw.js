@@ -1,6 +1,6 @@
 // Service Worker for Mavi Fit Game PWA
 // VERSION: Update this number when you want to force update
-const VERSION = '1.0.9'; // Added terms & conditions + username security
+const VERSION = '1.1.0'; // Force terms acceptance for existing users
 const CACHE_NAME = `mavi-fit-game-v${VERSION}`;
 const STATIC_CACHE = `static-v${VERSION}`;
 const DYNAMIC_CACHE = `dynamic-v${VERSION}`;

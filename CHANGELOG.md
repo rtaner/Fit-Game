@@ -2,6 +2,43 @@
 
 All notable changes to the Mavi Fit Game project will be documented in this file.
 
+## [1.1.0] - Force Terms Acceptance - 2024-12-06
+
+### Added
+- 🔒 **Force Terms Modal**: Existing users must accept terms
+  - Full-screen, non-dismissible modal
+  - Appears on dashboard for users who haven't accepted
+  - Scroll-to-bottom requirement before accepting
+  - Beautiful gradient design with security warnings
+- 📊 **Database Column**: `terms_accepted_at` timestamp
+  - Tracks when users accepted terms
+  - NULL for existing users (triggers modal)
+  - Auto-set for new registrations
+- 🔌 **API Endpoint**: `/api/users/accept-terms`
+  - POST endpoint to record acceptance
+  - Updates database timestamp
+  - Returns success confirmation
+
+### Changed
+- 📝 **Registration Flow**: New users auto-accept terms
+  - `terms_accepted_at` set during registration
+  - No modal shown for new users
+- 🎯 **Dashboard Logic**: Terms check on load
+  - Checks localStorage for acceptance status
+  - Shows modal if not accepted
+  - Blocks dashboard access until accepted
+
+### Security
+- 🛡️ All users must explicitly accept terms
+- 🛡️ Acceptance tracked with timestamp
+- 🛡️ Cannot bypass modal (full-screen, no close button)
+
+### Technical
+- Version bumped to 1.1.0
+- Created `ForceTermsModal.tsx` component
+- Added database migration file
+- Updated auth service for auto-acceptance
+
 ## [1.0.9] - Terms & Conditions + Security - 2024-12-06
 
 ### Added

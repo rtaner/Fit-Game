@@ -78,7 +78,7 @@ export async function registerServer(data: RegisterData): Promise<AuthResponse> 
     // Hash password
     const passwordHash = await bcrypt.hash(data.password, 12);
 
-    // Create user with initial streak of 1 (first day)
+    // Create user with initial streak of 1 (first day) and terms accepted
     const { data: newUser, error } = await supabase
       .from('users')
       .insert({
@@ -91,6 +91,7 @@ export async function registerServer(data: RegisterData): Promise<AuthResponse> 
         current_streak: 1,
         longest_streak: 1,
         last_login_date: new Date().toISOString().split('T')[0],
+        terms_accepted_at: new Date().toISOString(), // Auto-accept terms on registration
       })
       .select()
       .single();

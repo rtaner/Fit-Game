@@ -19,7 +19,7 @@ export function UpdateNotification() {
     const checkForUpdate = () => {
       const lastSeenVersion = localStorage.getItem('last-seen-version');
       const notificationShownThisSession = sessionStorage.getItem('notification-shown');
-      const currentVersion = '1.0.9'; // This will be updated automatically on each deployment
+      const currentVersion = '1.1.0'; // This will be updated automatically on each deployment
       
       // Don't show if already shown in this session
       if (notificationShownThisSession === 'true') {
@@ -29,6 +29,15 @@ export function UpdateNotification() {
       if (lastSeenVersion !== currentVersion) {
         // New version detected
         const updates: Record<string, UpdateInfo> = {
+          '1.1.0': {
+            version: '1.1.0',
+            message: 'Önemli Güncelleme!',
+            features: [
+              'Kullanım şartları zorunlu onay sistemi',
+              'Mevcut kullanıcılar için şart kabulü',
+              'Database güvenlik iyileştirmeleri'
+            ]
+          },
           '1.0.9': {
             version: '1.0.9',
             message: 'Yeni özellikler eklendi!',

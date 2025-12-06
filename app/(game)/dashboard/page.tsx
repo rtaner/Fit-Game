@@ -8,6 +8,7 @@ import { Settings, Flame, Play, BookOpen, Info, Sparkles } from 'lucide-react';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { RulesModal } from '@/components/molecules/RulesModal';
 import { InstallAppCard } from '@/components/molecules/InstallAppCard';
+import { ForceTermsModal } from '@/components/molecules/ForceTermsModal';
 import type { QuizCategory } from '@/types/database.types';
 
 // Kategori isimlerine göre icon mapping
@@ -49,6 +50,8 @@ export default function DashboardPage() {
   const [showAIModal, setShowAIModal] = useState(false);
   const [isLoadingAI, setIsLoadingAI] = useState(false);
   const [aiInsights, setAiInsights] = useState<string | null>(null);
+  const [showForceTerms, setShowForceTerms] = useState(false);
+  const [hasCheckedTerms, setHasCheckedTerms] = useState(false);
 
   useEffect(() => {
     fetchCategories();
@@ -61,8 +64,39 @@ export default function DashboardPage() {
         useAuthStore.getState().updateStreak(user.id);
         localStorage.setItem('last-streak-update', today);
       }
+      
+      // Check if user has accepted terms
+      if (!hasCheckedTerms) {
+        checkTermsAcceptance();
+      }
     }
-  }, [user?.id]);
+  }, [user?.id, hasCheckedTerms]);
+
+  const checkTermsAcceptance = () => {
+    // Check from localStorage (current-user)
+    const userStr = localStorage.getItem('current-user');
+    if (userStr) {
+      const currentUser = JSON.parse(userStr);
+      // If terms_accepted_at is null or undefined, show modal
+      if (!currentUser.terms_accepted_at) {
+        setShowForceTerms(true);
+      }
+      setHasCheckedTerms(true);
+    }
+  };
+
+  const handleTermsAccepted = () => {
+    // Update localStorage
+    const userStr = localStorage.getItem('current-user');
+    if (userStr) {
+      const currentUser = JSON.parse(userStr);
+      currentUser.terms_accepted_at = new Date().toISOString();
+      localStorage.setItem('current-user', JSON.stringify(currentUser));
+    }
+    
+    // Close modal
+    setShowForceTerms(false);
+  };
 
   const fetchCategories = async () => {
     try {
@@ -379,6 +413,11 @@ export default function DashboardPage() {
 
       {/* Rules Modal */}
       <RulesModal isOpen={isRulesModalOpen} onClose={() => setIsRulesModalOpen(false)} />
+
+      {/* Force Terms Modal */}
+      {showForceTerms && user?.id && (
+        <ForceTermsModal userId={user.id} onAccept={handleTermsAccepted} />
+      )}
 
       {/* AI Analysis Confirmation Modal */}
       {showAIModal && (
