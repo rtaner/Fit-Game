@@ -7,6 +7,7 @@ import { X, Percent, Clock, ThumbsUp, Trophy, RotateCcw, Home, AlertTriangle, Se
 import { useAuthStore } from '@/stores/useAuthStore';
 import type { GameQuestion } from '@/services/game.service';
 import BadgeCelebration from '@/components/BadgeCelebration';
+import { CompletionModal } from '@/components/molecules/CompletionModal';
 
 export default function PlayPage({ params }: { params: Promise<{ categoryId: string }> }) {
   const router = useRouter();
@@ -42,6 +43,9 @@ export default function PlayPage({ params }: { params: Promise<{ categoryId: str
   const [reportText, setReportText] = useState('');
   const [reportSubmitted, setReportSubmitted] = useState(false);
   const [timeLeft, setTimeLeft] = useState(8);
+  const [showCompletionModal, setShowCompletionModal] = useState(false);
+  const [completionBadge, setCompletionBadge] = useState<any>(null);
+  const [categoryName, setCategoryName] = useState<string>('');
 
   useEffect(() => {
     // Resolve params first (Next.js 15+ requirement)
@@ -193,6 +197,35 @@ export default function PlayPage({ params }: { params: Promise<{ categoryId: str
         // Update highest streak
         if (result.data.currentStreak > highestStreak) {
           setHighestStreak(result.data.currentStreak);
+        }
+
+        // 🎉 Check if all questions completed
+        if (result.data.allQuestionsCompleted && result.data.isCorrect) {
+          setTimeout(async () => {
+            // Call completion API to award badge and reset
+            try {
+              const completionResponse = await fetch('/api/game/complete-category', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  sessionId,
+                  userId: user?.id,
+                  categoryId,
+                }),
+              });
+
+              const completionResult = await completionResponse.json();
+              
+              if (completionResponse.ok) {
+                setCategoryName(completionResult.data.categoryName);
+                setCompletionBadge(completionResult.data.badgeAwarded);
+                setShowCompletionModal(true);
+              }
+            } catch (error) {
+              console.error('Error completing category:', error);
+            }
+          }, 800);
+          return;
         }
 
         if (!result.data.isCorrect) {
@@ -724,6 +757,58 @@ export default function PlayPage({ params }: { params: Promise<{ categoryId: str
             setUnlockedBadges([]);
             // Show game over screen after badge celebration closes
             setGameOver(true);
+          }}
+        />
+      )}
+
+      {/* Completion Modal */}
+      {showCompletionModal && (
+        <CompletionModal
+          categoryName={categoryName}
+          totalScore={score}
+          highestStreak={highestStreak}
+          totalQuestions={totalQuestions}
+          badgeEarned={completionBadge}
+          onPlayAgain={async () => {
+            // Reset modal
+            setShowCompletionModal(false);
+            setCompletionBadge(null);
+            
+            // Reset game state
+            setSelectedAnswer(null);
+            setShowResult(false);
+            setIsCorrect(false);
+            setLifeline50Used(false);
+            setLifelineSkipUsed(false);
+            
+            // Generate new question (asked_questions already reset by API)
+            try {
+              const response = await fetch('/api/game/start', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  userId: user?.id,
+                  categoryId,
+                }),
+              });
+
+              const result = await response.json();
+
+              if (response.ok) {
+                setSessionId(result.data.sessionId);
+                setQuestion(result.data.question);
+                setScore(result.data.score);
+                setTotalQuestions(0);
+                setCurrentStreak(0);
+                setHighestStreak(0);
+                setMultiplier(1);
+                setTotalAvailableQuestions(result.data.totalAvailableQuestions || 0);
+                setLifeline50Used(result.data.lifeline50Used);
+                setLifelineSkipUsed(result.data.lifelineSkipUsed);
+              }
+            } catch (error) {
+              console.error('Error restarting game:', error);
+            }
           }}
         />
       )}

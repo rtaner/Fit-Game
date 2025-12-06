@@ -178,9 +178,19 @@ export const gameService = {
 
     console.log('Total questions:', allQuestions.length, 'Available combinations:', availableQuestions.length, 'Already asked:', askedCombinations.length);
 
+    // 🎉 ALL QUESTIONS COMPLETED!
     if (availableQuestions.length < 3) {
-      console.error('Not enough available question combinations. Need at least 3, found:', availableQuestions.length);
-      return null;
+      console.log('🎉 All questions completed! Returning completion flag.');
+      // Return a special completion marker instead of null
+      return {
+        questionId: 'COMPLETED',
+        correctAnswerId: 'COMPLETED',
+        options: [],
+        questionText: 'COMPLETED',
+        description: 'All questions completed',
+        imageUrl: '',
+        color: '',
+      } as GameQuestion;
     }
 
     // Select random correct answer from available questions
@@ -205,24 +215,40 @@ export const gameService = {
       : 'default';
     
     // Filter questions by same category AND same gender (to avoid mixing categories and Kadın/Erkek)
-    // This ensures that even in "All Categories" mode, distractors come from the same category as the correct answer
+    // ALSO exclude questions with the same description as correct answer (to avoid confusion)
+    const correctDescription = (correctAnswer.description || correctAnswer.explanation || '').trim().toLowerCase();
+    
     let sameGenderQuestions = allQuestions.filter(
-      (q) => q.id !== correctAnswer.id && 
-             q.gender === correctAnswer.gender &&
-             q.category_id === correctAnswer.category_id
+      (q) => {
+        const qDescription = (q.description || q.explanation || '').trim().toLowerCase();
+        return q.id !== correctAnswer.id && 
+               q.gender === correctAnswer.gender &&
+               q.category_id === correctAnswer.category_id &&
+               qDescription !== correctDescription; // Aynı açıklamaya sahip fitler şıklarda yer almasın
+      }
     );
 
     // If not enough same-gender questions from same category, fallback to same gender only
     if (sameGenderQuestions.length < 2) {
       console.log('Not enough same-gender questions from same category, using same gender from all categories');
       sameGenderQuestions = allQuestions.filter(
-        (q) => q.id !== correctAnswer.id && q.gender === correctAnswer.gender
+        (q) => {
+          const qDescription = (q.description || q.explanation || '').trim().toLowerCase();
+          return q.id !== correctAnswer.id && 
+                 q.gender === correctAnswer.gender &&
+                 qDescription !== correctDescription; // Aynı açıklamaya sahip fitler şıklarda yer almasın
+        }
       );
       
       if (sameGenderQuestions.length < 2) {
         console.log('Not enough same-gender questions, using all questions from same category');
         sameGenderQuestions = allQuestions.filter(
-          (q) => q.id !== correctAnswer.id && q.category_id === correctAnswer.category_id
+          (q) => {
+            const qDescription = (q.description || q.explanation || '').trim().toLowerCase();
+            return q.id !== correctAnswer.id && 
+                   q.category_id === correctAnswer.category_id &&
+                   qDescription !== correctDescription; // Aynı açıklamaya sahip fitler şıklarda yer almasın
+          }
         );
         
         if (sameGenderQuestions.length < 2) {

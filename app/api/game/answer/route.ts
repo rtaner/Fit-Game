@@ -15,6 +15,20 @@ export async function POST(request: NextRequest) {
       questionColor
     );
 
+    // Check if all questions completed
+    const isCompleted = result.nextQuestion?.questionId === 'COMPLETED';
+    
+    if (isCompleted) {
+      // Return completion flag instead of next question
+      return NextResponse.json({ 
+        data: { 
+          ...result, 
+          nextQuestion: null,
+          allQuestionsCompleted: true 
+        } 
+      });
+    }
+
     // TODO: Add badge checking logic here in the future
     
     return NextResponse.json({ data: result });

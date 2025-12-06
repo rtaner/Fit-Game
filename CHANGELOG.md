@@ -2,6 +2,47 @@
 
 All notable changes to the Mavi Fit Game project will be documented in this file.
 
+## [1.2.0] - Category Completion & Badges - 2024-12-07
+
+### Added
+- 🎉 **Completion Modal**: Congratulations screen when all questions completed
+  - Shows total score, highest streak, and total questions
+  - Beautiful gradient design with celebration emoji
+  - Category-specific badge display
+  - "Play Again" and "Back to Dashboard" buttons
+- 🏆 **Category Completion Badges**: 5 new badges
+  - 👖 Denim Fit Ustası - Complete Denim Fit category
+  - 🩳 Denim Şort Uzmanı - Complete Denim Şort category
+  - 🎨 Koleksiyon Bilgini - Complete Koleksiyonlar category
+  - 📋 Prosedür Profesyoneli - Complete Prosedürler category
+  - 🏆 Tüm Kategoriler Şampiyonu - Complete All Categories mode
+- 🔄 **Play Again Feature**: Reset and replay without difficulty increase
+  - Resets `asked_questions` array
+  - Resets `used_colors` array
+  - Starts fresh game session
+  - Keeps same category and difficulty
+- 🔌 **API Endpoint**: `/api/game/complete-category`
+  - Awards category completion badge
+  - Resets game session for replay
+  - Returns badge information
+
+### Changed
+- 🎮 **Game Logic**: Completion detection instead of error
+  - Returns special "COMPLETED" flag when all questions done
+  - No more "Question failed to load" error
+  - Smooth transition to completion modal
+- 🐛 **Bug Fix**: Duplicate answer descriptions
+  - Filters out fits with same description as correct answer
+  - Prevents confusing duplicate options (e.g., Mavi & Bliss)
+  - Applied to all fallback scenarios
+
+### Technical
+- Database migration: `add_category_completion_badges.sql`
+- New component: `CompletionModal.tsx`
+- Updated: `game.service.ts` - completion detection
+- Updated: `app/api/game/answer/route.ts` - completion handling
+- Updated: `app/(game)/play/[categoryId]/page.tsx` - modal integration
+
 ## [1.1.0] - Force Terms Acceptance - 2024-12-06
 
 ### Added
