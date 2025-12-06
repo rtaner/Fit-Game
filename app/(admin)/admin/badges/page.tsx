@@ -241,6 +241,7 @@ export default function BadgesAdminPage() {
     performance: '⚡ Performans',
     consistency: '🔥 İstikrar',
     competition: '🏅 Rekabet',
+    category_completion: '🎯 Kategori Tamamlama',
     secret: '🎭 Gizli',
   };
 
