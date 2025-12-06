@@ -57,6 +57,7 @@ export default function ProfilePage() {
   const [newBadges, setNewBadges] = useState<Badge[]>([]);
   const [rank, setRank] = useState<UserRank | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingRank, setIsLoadingRank] = useState(true);
   const [storeName, setStoreName] = useState<string>('');
 
   useEffect(() => {
@@ -91,6 +92,9 @@ export default function ProfilePage() {
 
     try {
       const supabase = createClient();
+      
+      // Load rank separately in background (non-blocking)
+      loadUserRank();
 
       // Get game statistics directly from Supabase (bypass API auth issues)
       const { data: sessions } = await supabase
@@ -173,67 +177,40 @@ export default function ProfilePage() {
         setNewBadges(badgeResult.data.badges || []);
       }
 
-      // Calculate ranks
-      const { data: userSessions } = await supabase
-        .from('game_sessions')
-        .select('score')
-        .eq('user_id', user.id)
-        .not('ended_at', 'is', null);
-
-      const userTotalScore = userSessions?.reduce((sum, s) => sum + (s.score || 0), 0) || 0;
-
-      // Get all users for global rank
-      const { data: allUsers } = await supabase
-        .from('users')
-        .select('id');
-
-      let globalRank = 1;
-      if (allUsers) {
-        for (const otherUser of allUsers) {
-          if (otherUser.id === user.id) continue;
-          
-          const { data: otherSessions } = await supabase
-            .from('game_sessions')
-            .select('score')
-            .eq('user_id', otherUser.id)
-            .not('ended_at', 'is', null);
-
-          const otherTotalScore = otherSessions?.reduce((sum, s) => sum + (s.score || 0), 0) || 0;
-          if (otherTotalScore > userTotalScore) {
-            globalRank++;
-          }
-        }
-      }
-
-      // Get store users for local rank
-      const { data: storeUsers } = await supabase
-        .from('users')
-        .select('id')
-        .eq('store_code', user.store_code);
-
-      let localRank = 1;
-      if (storeUsers) {
-        for (const otherUser of storeUsers) {
-          if (otherUser.id === user.id) continue;
-          
-          const { data: otherSessions } = await supabase
-            .from('game_sessions')
-            .select('score')
-            .eq('user_id', otherUser.id)
-            .not('ended_at', 'is', null);
-
-          const otherTotalScore = otherSessions?.reduce((sum, s) => sum + (s.score || 0), 0) || 0;
-          if (otherTotalScore > userTotalScore) {
-            localRank++;
-          }
-        }
-      }
-
-      setRank({ globalRank, localRank });
+      // Rank is loaded separately in loadUserRank()
     } catch (error) {
       console.error('Error loading profile:', error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const loadUserRank = async () => {
+    if (!user) return;
+    
+    setIsLoadingRank(true);
+    try {
+      const supabase = createClient();
+      
+      // Use optimized SQL function for rank calculation
+      const { data: rankData, error } = await supabase
+        .rpc('get_user_rank', { p_user_id: user.id });
+
+      if (error) {
+        console.error('Error loading rank:', error);
+        // Fallback: show placeholder
+        setRank({ globalRank: 0, localRank: 0 });
+      } else if (rankData && rankData.length > 0) {
+        setRank({
+          globalRank: Number(rankData[0].global_rank),
+          localRank: Number(rankData[0].local_rank),
+        });
+      }
+    } catch (error) {
+      console.error('Error in loadUserRank:', error);
+      setRank({ globalRank: 0, localRank: 0 });
+    } finally {
+      setIsLoadingRank(false);
     }
   };
 
@@ -525,10 +502,17 @@ export default function ProfilePage() {
                 </svg>
                 <span className="text-xs text-gray-500">Sıralama</span>
               </div>
-              <p className="text-2xl font-bold text-gray-900">
-                #{rank?.globalRank || '-'}
-                <span className="text-sm font-normal text-gray-500">/{rank?.localRank || '-'}</span>
-              </p>
+              {isLoadingRank ? (
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 border-2 border-mavi-navy border-t-transparent rounded-full animate-spin"></div>
+                  <span className="text-sm text-gray-400">Hesaplanıyor...</span>
+                </div>
+              ) : (
+                <p className="text-2xl font-bold text-gray-900">
+                  #{rank?.globalRank || '-'}
+                  <span className="text-sm font-normal text-gray-500">/{rank?.localRank || '-'}</span>
+                </p>
+              )}
             </div>
           </motion.div>
         </section>
