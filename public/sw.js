@@ -1,6 +1,6 @@
 // Service Worker for Mavi Fit Game PWA
 // VERSION: Update this number when you want to force update
-const VERSION = '1.2.0'; // Category completion screen with badges
+const VERSION = '1.2.2'; // Profile performance optimization + auto-reload on update
 const CACHE_NAME = `mavi-fit-game-v${VERSION}`;
 const STATIC_CACHE = `static-v${VERSION}`;
 const DYNAMIC_CACHE = `dynamic-v${VERSION}`;
@@ -45,6 +45,17 @@ self.addEventListener('activate', (event) => {
       console.log('[SW] Service worker activated and taking control');
       // Take control of all pages immediately
       return self.clients.claim();
+    }).then(() => {
+      // Notify all clients about the update
+      return self.clients.matchAll().then((clients) => {
+        clients.forEach((client) => {
+          console.log('[SW] Notifying client about update');
+          client.postMessage({
+            type: 'SW_UPDATED',
+            version: VERSION
+          });
+        });
+      });
     })
   );
 });

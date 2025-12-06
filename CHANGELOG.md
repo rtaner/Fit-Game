@@ -2,6 +2,24 @@
 
 All notable changes to the Mavi Fit Game project will be documented in this file.
 
+## [1.2.3] - Auto-Reload PWA Updates - 2024-12-07
+
+### Added
+- 🔄 **Automatic PWA Updates**: App now auto-reloads when new version deployed
+  - Checks for updates every 30 seconds
+  - Auto-reloads 2 seconds after detecting update
+  - No need to close and reopen app
+  - Seamless update experience
+
+### Changed
+- ⚡ **Service Worker**: Updated to v1.2.2 with auto-reload support
+- 🔔 **Update Detection**: More aggressive update checking (30s interval)
+
+### Technical
+- Updated: `public/sw.js` - added SW_UPDATED message
+- Updated: `app/layout.tsx` - added auto-reload on SW update
+- Service Worker now notifies clients immediately on activation
+
 ## [1.2.2] - Profile Rank Function Fix - 2024-12-07
 
 ### Fixed

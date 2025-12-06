@@ -63,10 +63,11 @@ export default function RootLayout({
                   .then(reg => {
                     console.log('[PWA] Service Worker registered');
                     
-                    // Check for updates every 60 seconds
+                    // Check for updates every 30 seconds (more aggressive)
                     setInterval(() => {
+                      console.log('[PWA] Checking for updates...');
                       reg.update();
-                    }, 60000);
+                    }, 30000);
                     
                     // Listen for updates
                     reg.addEventListener('updatefound', () => {
@@ -75,16 +76,27 @@ export default function RootLayout({
                       
                       newWorker.addEventListener('statechange', () => {
                         if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                          console.log('[PWA] New version available! Reloading...');
-                          // New service worker available, reload the page
-                          newWorker.postMessage({ type: 'SKIP_WAITING' });
-                          window.location.reload();
+                          console.log('[PWA] New version installed! Auto-reloading in 2 seconds...');
+                          // Give user 2 seconds to see what's happening, then reload
+                          setTimeout(() => {
+                            newWorker.postMessage({ type: 'SKIP_WAITING' });
+                            window.location.reload();
+                          }, 2000);
                         }
                       });
                     });
                   })
                   .catch(err => console.error('[PWA] Service Worker registration failed:', err));
                   
+                // Listen for messages from service worker
+                navigator.serviceWorker.addEventListener('message', (event) => {
+                  if (event.data && event.data.type === 'SW_UPDATED') {
+                    console.log('[PWA] Service worker updated to version:', event.data.version);
+                    console.log('[PWA] Reloading page to apply update...');
+                    window.location.reload();
+                  }
+                });
+                
                 // Listen for controller change (new SW activated)
                 navigator.serviceWorker.addEventListener('controllerchange', () => {
                   console.log('[PWA] New service worker activated, reloading page...');
