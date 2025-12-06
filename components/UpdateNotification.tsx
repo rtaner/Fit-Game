@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, X } from 'lucide-react';
+import packageJson from '@/package.json';
 
 interface UpdateInfo {
   version: string;
@@ -19,7 +20,7 @@ export function UpdateNotification() {
     const checkForUpdate = () => {
       const lastSeenVersion = localStorage.getItem('last-seen-version');
       const notificationShownThisSession = sessionStorage.getItem('notification-shown');
-      const currentVersion = '1.2.0'; // This will be updated automatically on each deployment
+      const currentVersion = packageJson.version; // Automatically read from package.json
       
       // Don't show if already shown in this session
       if (notificationShownThisSession === 'true') {
@@ -29,6 +30,26 @@ export function UpdateNotification() {
       if (lastSeenVersion !== currentVersion) {
         // New version detected
         const updates: Record<string, UpdateInfo> = {
+          '1.3.1': {
+            version: '1.3.1',
+            message: 'Hata analizi erişimi!',
+            features: [
+              'Personel kendi hata analizini yapabilir',
+              'AI destekli kişisel öneriler',
+              'Otomatik versiyon takibi',
+              'Performans iyileştirmeleri'
+            ]
+          },
+          '1.3.0': {
+            version: '1.3.0',
+            message: 'Adil skor sistemi!',
+            features: [
+              'Toplam skora göre sıralama',
+              'Tutarlılık ödüllendirilir',
+              'Eşitlik durumunda en yüksek skor',
+              'Tüm sekmeler güncellendi'
+            ]
+          },
           '1.2.0': {
             version: '1.2.0',
             message: 'Yeni özellikler eklendi!',

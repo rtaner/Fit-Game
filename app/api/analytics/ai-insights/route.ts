@@ -15,13 +15,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if user has analytics access
-    if (userRole !== 'admin' && userRole !== 'store_manager') {
-      return NextResponse.json(
-        { error: { code: 'UNAUTHORIZED', message: 'Bu sayfaya erişim yetkiniz yok' } },
-        { status: 403 }
-      );
-    }
+    // All users can access their own AI analysis
+    // No role restriction needed - users can only see their own data
 
     // Get training data from request body
     const data = await request.json();

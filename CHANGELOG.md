@@ -2,6 +2,27 @@
 
 All notable changes to the Mavi Fit Game project will be documented in this file.
 
+## [1.3.1] - Employee Error Analysis Access - 2024-12-07
+
+### Fixed
+- 🔓 **Error Analysis Access**: Employees can now access their own AI error analysis
+  - Removed role restriction from AI insights API
+  - Added user-specific data filtering for employees
+  - Employees see only their own performance data
+  - Admins see all data, store managers see their store's data
+
+### Changed
+- 🤖 **AI Analysis Permissions**: Role-based data filtering
+  - `employee`: Can analyze their own errors
+  - `store_manager`: Can analyze their store's data
+  - `admin`: Can analyze all data
+
+### Technical
+- Updated: `app/api/analytics/ai-insights/route.ts` - removed role restriction
+- Updated: `app/api/analytics/training-needs/route.ts` - added userId filtering
+- Updated: `components/UpdateNotification.tsx` - automatic version from package.json
+- Service Worker version: 1.3.1
+
 ## [1.3.0] - Fair Leaderboard System - 2024-12-07
 
 ### Changed

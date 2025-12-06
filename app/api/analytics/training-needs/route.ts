@@ -16,27 +16,25 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Check if user has analytics access
-    if (userRole !== 'admin' && userRole !== 'store_manager') {
-      return NextResponse.json(
-        { error: { code: 'UNAUTHORIZED', message: 'Bu sayfaya erişim yetkiniz yok' } },
-        { status: 403 }
-      );
-    }
-
     const searchParams = request.nextUrl.searchParams;
     const startDate = searchParams.get('startDate') || undefined;
     const endDate = searchParams.get('endDate') || undefined;
 
-    // Get store filter based on user role
-    const userStoreFilter = userRole === 'store_manager' ? storeCode : undefined;
-
-    const filters = {
+    // Get filters based on user role
+    let filters: any = {
       startDate,
       endDate,
-      // Store managers can only see their own store
-      storeId: userStoreFilter || undefined,
     };
+
+    // Role-based filtering:
+    // - admin: can see all data (no filter)
+    // - store_manager: can see their store's data
+    // - employee: can see only their own data
+    if (userRole === 'store_manager') {
+      filters.storeId = storeCode || undefined;
+    } else if (userRole === 'employee') {
+      filters.userId = userId; // Only show employee's own data
+    }
 
     const [categoryNeeds, confusedFits, failedFits, storeComparison] = await Promise.all([
       analyticsService.getCategoryTrainingNeeds(filters),
