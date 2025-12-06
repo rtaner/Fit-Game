@@ -6,7 +6,8 @@ export interface LeaderboardEntry {
   username: string;
   storeCode: number;
   storeName: string;
-  score: number;
+  score: number; // Total score (sum of all games)
+  highScore: number; // Highest single game score (for tiebreaker)
   totalGames: number;
   activeBadge?: {
     id: string;
@@ -76,8 +77,8 @@ export const leaderboardService = {
       return [];
     }
 
-    // Group by user and get their highest score
-    const userScores = new Map<string, { username: string; storeCode: number; storeName: string; highScore: number; games: number; activeBadgeId: string | null }>();
+    // Group by user and calculate total score + highest score
+    const userScores = new Map<string, { username: string; storeCode: number; storeName: string; totalScore: number; highScore: number; games: number; activeBadgeId: string | null }>();
 
     sessions.forEach((session: any) => {
       const userId = session.user_id;
@@ -89,14 +90,16 @@ export const leaderboardService = {
 
       if (userScores.has(userId)) {
         const existing = userScores.get(userId)!;
-        existing.highScore = Math.max(existing.highScore, score);
+        existing.totalScore += score; // Add to total score
+        existing.highScore = Math.max(existing.highScore, score); // Track highest single game
         existing.games += 1;
       } else {
         userScores.set(userId, {
           username,
           storeCode,
           storeName,
-          highScore: score,
+          totalScore: score, // Initialize with first score
+          highScore: score, // Initialize with first score
           games: 1,
           activeBadgeId,
         });
@@ -144,7 +147,7 @@ export const leaderboardService = {
       }
     }
 
-    // Convert to array and sort
+    // Convert to array and sort (Hybrid: Total score primary, High score secondary)
     const leaderboard: LeaderboardEntry[] = Array.from(userScores.entries())
       .map(([userId, data]) => ({
         rank: 0,
@@ -152,11 +155,19 @@ export const leaderboardService = {
         username: data.username,
         storeCode: data.storeCode,
         storeName: data.storeName,
-        score: data.highScore,
+        score: data.totalScore, // Show total score
+        highScore: data.highScore, // Keep high score for tiebreaker and display
         totalGames: data.games,
         activeBadge: data.activeBadgeId ? badgeMap.get(data.activeBadgeId) || null : null,
       }))
-      .sort((a, b) => b.score - a.score)
+      .sort((a, b) => {
+        // Primary: Sort by total score (descending)
+        if (b.score !== a.score) {
+          return b.score - a.score;
+        }
+        // Secondary: If total scores are equal, sort by highest single game score (descending)
+        return b.highScore - a.highScore;
+      })
       .slice(0, limit)
       .map((entry, index) => ({
         ...entry,

@@ -36,8 +36,8 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Calculate highest score and total games for each user
-    const userStats = new Map<string, { username: string; storeCode: number; storeName: string; maxScore: number; totalGames: number; activeBadgeId: string | null }>();
+    // Calculate total score, highest score and total games for each user
+    const userStats = new Map<string, { username: string; storeCode: number; storeName: string; totalScore: number; highScore: number; totalGames: number; activeBadgeId: string | null }>();
 
     users?.forEach((user: any) => {
       if (!userStats.has(user.id)) {
@@ -46,7 +46,8 @@ export async function GET(request: NextRequest) {
           username: user.username,
           storeCode: user.store_code,
           storeName: storeName,
-          maxScore: 0,
+          totalScore: 0,
+          highScore: 0,
           totalGames: 0,
           activeBadgeId: user.active_badge_id || null,
         });
@@ -58,8 +59,9 @@ export async function GET(request: NextRequest) {
       if (user.game_sessions && Array.isArray(user.game_sessions)) {
         user.game_sessions.forEach((session: any) => {
           stats.totalGames++;
-          if (session.score > stats.maxScore) {
-            stats.maxScore = session.score;
+          stats.totalScore += session.score; // Add to total score
+          if (session.score > stats.highScore) {
+            stats.highScore = session.score; // Track highest score
           }
         });
       }
@@ -104,18 +106,26 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Convert to array and sort by max score
+    // Convert to array and sort by total score (with high score as tiebreaker)
     const leaderboard = Array.from(userStats.entries())
       .map(([userId, stats]) => ({
         userId,
         username: stats.username,
         storeCode: stats.storeCode,
         storeName: stats.storeName,
-        score: stats.maxScore,
+        score: stats.totalScore, // Total score
+        highScore: stats.highScore, // Highest single game score
         totalGames: stats.totalGames,
         activeBadge: stats.activeBadgeId ? badgeMap.get(stats.activeBadgeId) || null : null,
       }))
-      .sort((a, b) => b.score - a.score)
+      .sort((a, b) => {
+        // Primary: Sort by total score (descending)
+        if (b.score !== a.score) {
+          return b.score - a.score;
+        }
+        // Secondary: If total scores are equal, sort by highest single game score (descending)
+        return b.highScore - a.highScore;
+      })
       .map((entry, index) => ({
         ...entry,
         rank: index + 1,

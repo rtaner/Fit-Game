@@ -13,7 +13,8 @@ interface LeaderboardEntry {
   username: string;
   storeCode: number;
   storeName: string;
-  score: number;
+  score: number; // Total score
+  highScore: number; // Highest single game score
   totalGames: number;
   activeBadge?: {
     id: string;
@@ -213,6 +214,11 @@ export default function LeaderboardPage() {
                       : 0
                     }
                   </p>
+                  {'highScore' in topThree[1] && topThree[1].highScore && (
+                    <p className="text-[9px] text-gray-400">
+                      En yüksek puan: {topThree[1].highScore}
+                    </p>
+                  )}
                   <div className="h-14 w-20 bg-gradient-to-t from-gray-300 to-gray-200 rounded-t-lg mt-2 flex items-center justify-center">
                     <span className="text-gray-600 font-bold text-lg">2</span>
                   </div>
@@ -261,6 +267,11 @@ export default function LeaderboardPage() {
                       : 0
                     }
                   </p>
+                  {'highScore' in topThree[0] && topThree[0].highScore && (
+                    <p className="text-[9px] text-gray-400">
+                      En yüksek puan: {topThree[0].highScore}
+                    </p>
+                  )}
                   <div className="h-20 w-24 bg-gradient-to-t from-amber-400 to-amber-300 rounded-t-lg mt-2 flex items-center justify-center">
                     <span className="text-amber-800 font-bold text-xl">1</span>
                   </div>
@@ -302,6 +313,11 @@ export default function LeaderboardPage() {
                       : 0
                     }
                   </p>
+                  {'highScore' in topThree[2] && topThree[2].highScore && (
+                    <p className="text-[9px] text-gray-400">
+                      En yüksek puan: {topThree[2].highScore}
+                    </p>
+                  )}
                   <div className="h-10 w-20 bg-gradient-to-t from-orange-400 to-orange-300 rounded-t-lg mt-2 flex items-center justify-center">
                     <span className="text-orange-800 font-bold text-lg">3</span>
                   </div>
@@ -364,7 +380,15 @@ export default function LeaderboardPage() {
                         <p className={`text-sm font-bold ${isHighlighted ? 'text-mavi-navy' : 'text-gray-900'}`}>
                           {'score' in entry ? entry.score : entry.averageScore}
                         </p>
-                        <p className="text-xs text-gray-500">{'score' in entry ? 'puan' : 'ort. puan'}</p>
+                        {'score' in entry && entry.highScore ? (
+                          <p className="text-[10px] text-gray-400 leading-tight mt-0.5">
+                            En yüksek puan: {entry.highScore}
+                          </p>
+                        ) : (
+                          <p className="text-xs text-gray-500">
+                            {'score' in entry ? 'puan' : 'ort. puan'}
+                          </p>
+                        )}
                       </div>
                     </div>
                   );
@@ -413,7 +437,11 @@ export default function LeaderboardPage() {
                         <p className={`text-sm font-bold ${isHighlighted ? 'text-mavi-navy' : 'text-gray-900'}`}>
                           {entry.score}
                         </p>
-                        <p className="text-xs text-gray-500">puan</p>
+                        {entry.highScore && (
+                          <p className="text-[10px] text-gray-400 leading-tight mt-0.5">
+                            En yüksek puan: {entry.highScore}
+                          </p>
+                        )}
                       </div>
                     </div>
                   );
@@ -457,7 +485,7 @@ export default function LeaderboardPage() {
                         <p className={`text-sm font-bold ${isHighlighted ? 'text-mavi-navy' : 'text-gray-900'}`}>
                           {entry.averageScore.toFixed(1)}
                         </p>
-                        <p className="text-xs text-gray-500">puan</p>
+                        <p className="text-xs text-gray-500">ortalama puan</p>
                       </div>
                     </div>
                   );

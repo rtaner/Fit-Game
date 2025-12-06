@@ -2,6 +2,27 @@
 
 All notable changes to the Mavi Fit Game project will be documented in this file.
 
+## [1.3.0] - Fair Leaderboard System - 2024-12-07
+
+### Changed
+- 🏆 **Leaderboard Scoring**: Switched from highest single game to total score
+  - **Primary Sort**: Total score (sum of all games)
+  - **Secondary Sort**: Highest single game score (tiebreaker)
+  - More fair: rewards consistency and effort
+  - Prevents multiple users with same score
+  - Encourages playing more games
+
+### Added
+- 📊 **Score Display**: Shows both total and highest scores
+  - Leaderboard list shows "toplam" with "en yüksek: X" below
+  - Podium shows "max: X" for highest single game
+  - Clear indication of scoring system
+
+### Technical
+- Updated: `services/leaderboard.service.ts` - hybrid scoring algorithm
+- Updated: `app/(game)/leaderboard/page.tsx` - dual score display
+- Interface updated with `highScore` field
+
 ## [1.2.3] - Auto-Reload PWA Updates - 2024-12-07
 
 ### Added
