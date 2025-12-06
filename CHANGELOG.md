@@ -2,6 +2,19 @@
 
 All notable changes to the Mavi Fit Game project will be documented in this file.
 
+## [1.2.2] - Profile Rank Function Fix - 2024-12-07
+
+### Fixed
+- 🐛 **SQL Function Type Casting**: Fixed type casting issues in rank calculation
+  - Added explicit VARCHAR casting for store_code comparison
+  - Added BIGINT casting for score calculations
+  - Added null check for users without data
+- 📝 **Migration Files**: Added v2 and v3 of rank function with fixes
+
+### Technical
+- Database migration: `create_user_rank_function_v3.sql` (final working version)
+- Fixed PostgreSQL type mismatch errors
+
 ## [1.2.1] - Profile Performance Optimization - 2024-12-07
 
 ### Performance
