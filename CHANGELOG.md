@@ -2,6 +2,60 @@
 
 All notable changes to the Mavi Fit Game project will be documented in this file.
 
+## [1.0.9] - Terms & Conditions + Security - 2024-12-06
+
+### Added
+- 📜 **Terms & Conditions Modal**: Comprehensive usage terms and disclaimer
+  - 6-section detailed terms document
+  - Security warnings highlighted
+  - Scrollable modal with fixed header/footer
+  - Beautiful design with color-coded sections
+- ☑️ **Terms Acceptance Checkbox**: Required on registration
+  - Users must accept terms to register
+  - "Read Terms" link opens modal
+  - Form validation prevents registration without acceptance
+- ⚠️ **Username Security Warning**: 
+  - Warning message: "Don't use company employee ID"
+  - Only letters and underscores allowed (no numbers)
+  - Prevents accidental use of sensitive information
+
+### Changed
+- 🔒 **Username Validation**: Updated regex to block numbers
+  - Old: `/^[a-zA-Z0-9_]+$/` (letters, numbers, underscore)
+  - New: `/^[a-zA-Z_]+$/` (letters, underscore only)
+- 📝 **Registration Schema**: Added `acceptTerms` field validation
+
+### Security
+- 🛡️ Prevents users from using employee IDs as usernames
+- 🛡️ Clear warnings about not using company passwords
+- 🛡️ Explicit disclaimer about app being unofficial
+
+### Technical
+- Version bumped to 1.0.9
+- Created `TermsModal.tsx` component
+- Updated registration form validation
+
+## [1.0.8] - Update Notification System - 2024-12-06
+
+### Added
+- ✨ **Update Notification Component**: Toast notification for new updates
+  - Shows when user opens app after update
+  - Displays version number and new features
+  - Auto-dismisses after 5 seconds
+  - Manual close button
+  - Beautiful gradient design (purple to blue)
+- 🔔 **Version Tracking**: localStorage-based version tracking
+- 📝 **Changelog Integration**: Update messages pulled from changelog
+
+### Changed
+- 🔄 **Automatic Version Management**: AI now handles version updates automatically
+- 📝 **Updated PWA Guide**: Simplified deployment process documentation
+
+### Technical
+- Version bumped to 1.0.8
+- Added UpdateNotification component to root layout
+- Integrated with existing PWA update system
+
 ## [2.0.0] - UI Migration - 2024-12-03
 
 ### Added

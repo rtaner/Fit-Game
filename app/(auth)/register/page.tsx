@@ -10,9 +10,10 @@ import { z } from 'zod';
 import { register as registerUser } from '@/services/auth.service';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { storeService } from '@/services/store.service';
+import { TermsModal } from '@/components/molecules/TermsModal';
 import type { Store } from '@/types/database.types';
 
-// Extended schema with confirmPassword
+// Extended schema with confirmPassword and terms acceptance
 const registerSchema = z.object({
   firstName: z.string().min(1, 'İsim gereklidir').max(100),
   lastName: z.string().min(1, 'Soyisim gereklidir').max(100),
@@ -20,10 +21,13 @@ const registerSchema = z.object({
     .string()
     .min(3, 'Kullanıcı adı en az 3 karakter olmalıdır')
     .max(50, 'Kullanıcı adı en fazla 50 karakter olmalıdır')
-    .regex(/^[a-zA-Z0-9_]+$/, 'Kullanıcı adı sadece harf, rakam ve alt çizgi içerebilir'),
+    .regex(/^[a-zA-Z_]+$/, 'Kullanıcı adı sadece harf ve alt çizgi içerebilir (rakam kullanılamaz)'),
   password: z.string().min(6, 'Şifre en az 6 karakter olmalıdır'),
   confirmPassword: z.string().min(6, 'Şifre en az 6 karakter olmalıdır'),
   storeCode: z.number().int().positive('Mağaza seçimi gereklidir'),
+  acceptTerms: z.boolean().refine((val) => val === true, {
+    message: 'Kullanım şartlarını kabul etmelisiniz',
+  }),
 }).refine((data) => data.password === data.confirmPassword, {
   message: 'Şifreler eşleşmiyor',
   path: ['confirmPassword'],
@@ -41,6 +45,8 @@ export default function RegisterPage() {
   const [showStoreDropdown, setShowStoreDropdown] = useState(false);
   const [selectedStoreCode, setSelectedStoreCode] = useState<number | null>(null);
   const [storeSearchQuery, setStoreSearchQuery] = useState('');
+  const [showTermsModal, setShowTermsModal] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
 
   const {
     register,
@@ -193,6 +199,10 @@ export default function RegisterPage() {
                 className="w-full h-14 pl-12 pr-4 bg-white border border-gray-200 rounded-2xl text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-mavi-navy focus:border-transparent transition-all"
               />
             </div>
+            <p className="text-xs text-orange-600 mt-2 flex items-start gap-1">
+              <span className="flex-shrink-0">⚠️</span>
+              <span>Şirket sicil kodunuzu kullanmayın. Sadece harf ve alt çizgi kullanabilirsiniz.</span>
+            </p>
             {errors.username && (
               <motion.p
                 initial={{ opacity: 0, y: -10 }}
@@ -419,6 +429,41 @@ export default function RegisterPage() {
             )}
           </div>
 
+          {/* Terms and Conditions Checkbox */}
+          <div className="mt-4">
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                {...register('acceptTerms')}
+                type="checkbox"
+                checked={acceptedTerms}
+                onChange={(e) => setAcceptedTerms(e.target.checked)}
+                className="mt-1 w-5 h-5 rounded border-gray-300 text-mavi-navy focus:ring-mavi-navy cursor-pointer"
+              />
+              <span className="text-sm text-gray-700 flex-1">
+                <button
+                  type="button"
+                  onClick={() => setShowTermsModal(true)}
+                  className="text-mavi-navy font-semibold hover:underline"
+                >
+                  Kullanım Şartları ve Sorumluluk Reddi
+                </button>
+                'ni okudum ve kabul ediyorum.
+                <span className="block text-xs text-gray-500 mt-1">
+                  (Güncelleme: 06.12.2024)
+                </span>
+              </span>
+            </label>
+            {errors.acceptTerms && (
+              <motion.p
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="text-red-500 text-sm mt-2"
+              >
+                {errors.acceptTerms.message}
+              </motion.p>
+            )}
+          </div>
+
           {/* Error Message */}
           {error && (
             <motion.div
@@ -435,7 +480,7 @@ export default function RegisterPage() {
           {/* Register Button */}
           <button
             type="submit"
-            disabled={isLoading || !selectedStoreCode}
+            disabled={isLoading || !selectedStoreCode || !acceptedTerms}
             className="w-full h-14 bg-mavi-navy text-white font-semibold rounded-2xl shadow-lg shadow-mavi-navy/20 active:scale-[0.98] transition-transform disabled:opacity-70 disabled:active:scale-100 mt-6"
           >
             {isLoading ? (
@@ -449,6 +494,9 @@ export default function RegisterPage() {
           </button>
         </form>
       </section>
+
+      {/* Terms Modal */}
+      <TermsModal isOpen={showTermsModal} onClose={() => setShowTermsModal(false)} />
 
       {/* Login Link */}
       <footer className="flex-none py-6 px-6 border-t border-gray-200">

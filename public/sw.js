@@ -1,7 +1,9 @@
 // Service Worker for Mavi Fit Game PWA
-const CACHE_NAME = 'mavi-fit-game-v1';
-const STATIC_CACHE = 'static-v1';
-const DYNAMIC_CACHE = 'dynamic-v1';
+// VERSION: Update this number when you want to force update
+const VERSION = '1.0.9'; // Added terms & conditions + username security
+const CACHE_NAME = `mavi-fit-game-v${VERSION}`;
+const STATIC_CACHE = `static-v${VERSION}`;
+const DYNAMIC_CACHE = `dynamic-v${VERSION}`;
 
 // Files to cache immediately
 const STATIC_ASSETS = [
@@ -14,29 +16,37 @@ const STATIC_ASSETS = [
 
 // Install event - cache static assets
 self.addEventListener('install', (event) => {
-  console.log('[SW] Installing service worker...');
+  console.log(`[SW] Installing service worker v${VERSION}...`);
   event.waitUntil(
     caches.open(STATIC_CACHE).then((cache) => {
       console.log('[SW] Caching static assets');
       return cache.addAll(STATIC_ASSETS);
     })
   );
+  // Force the waiting service worker to become the active service worker
   self.skipWaiting();
 });
 
 // Activate event - clean up old caches
 self.addEventListener('activate', (event) => {
-  console.log('[SW] Activating service worker...');
+  console.log(`[SW] Activating service worker v${VERSION}...`);
   event.waitUntil(
     caches.keys().then((keys) => {
+      console.log('[SW] Cleaning up old caches...');
       return Promise.all(
         keys
-          .filter((key) => key !== STATIC_CACHE && key !== DYNAMIC_CACHE)
-          .map((key) => caches.delete(key))
+          .filter((key) => key !== STATIC_CACHE && key !== DYNAMIC_CACHE && key !== CACHE_NAME)
+          .map((key) => {
+            console.log(`[SW] Deleting old cache: ${key}`);
+            return caches.delete(key);
+          })
       );
+    }).then(() => {
+      console.log('[SW] Service worker activated and taking control');
+      // Take control of all pages immediately
+      return self.clients.claim();
     })
   );
-  return self.clients.claim();
 });
 
 // Fetch event - serve from cache, fallback to network
@@ -95,6 +105,16 @@ self.addEventListener('fetch', (event) => {
 // Handle messages from clients
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
+    console.log('[SW] Received SKIP_WAITING message');
     self.skipWaiting();
   }
+  
+  if (event.data && event.data.type === 'GET_VERSION') {
+    event.ports[0].postMessage({ version: VERSION });
+  }
+});
+
+// Notify clients when a new version is available
+self.addEventListener('controllerchange', () => {
+  console.log('[SW] Controller changed - new version active');
 });

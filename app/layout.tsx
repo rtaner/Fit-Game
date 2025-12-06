@@ -3,6 +3,7 @@ import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import { MonitoringProvider } from '@/components/MonitoringProvider';
 import { PWAInstallPrompt } from '@/components/PWAInstallPrompt';
+import { UpdateNotification } from '@/components/UpdateNotification';
 import Script from 'next/script';
 import './globals.css';
 
@@ -49,6 +50,7 @@ export default function RootLayout({
         <MonitoringProvider>
           {children}
           <PWAInstallPrompt />
+          <UpdateNotification />
         </MonitoringProvider>
         <Analytics />
         <SpeedInsights />
@@ -58,8 +60,36 @@ export default function RootLayout({
             if ('serviceWorker' in navigator) {
               window.addEventListener('load', () => {
                 navigator.serviceWorker.register('/sw.js')
-                  .then(reg => console.log('[PWA] Service Worker registered'))
+                  .then(reg => {
+                    console.log('[PWA] Service Worker registered');
+                    
+                    // Check for updates every 60 seconds
+                    setInterval(() => {
+                      reg.update();
+                    }, 60000);
+                    
+                    // Listen for updates
+                    reg.addEventListener('updatefound', () => {
+                      const newWorker = reg.installing;
+                      console.log('[PWA] New service worker found, installing...');
+                      
+                      newWorker.addEventListener('statechange', () => {
+                        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                          console.log('[PWA] New version available! Reloading...');
+                          // New service worker available, reload the page
+                          newWorker.postMessage({ type: 'SKIP_WAITING' });
+                          window.location.reload();
+                        }
+                      });
+                    });
+                  })
                   .catch(err => console.error('[PWA] Service Worker registration failed:', err));
+                  
+                // Listen for controller change (new SW activated)
+                navigator.serviceWorker.addEventListener('controllerchange', () => {
+                  console.log('[PWA] New service worker activated, reloading page...');
+                  window.location.reload();
+                });
               });
             }
           `}
