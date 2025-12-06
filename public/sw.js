@@ -1,6 +1,6 @@
 // Service Worker for Mavi Fit Game PWA
 // VERSION: Update this number when you want to force update
-const VERSION = '1.2.2'; // Profile performance optimization + auto-reload on update
+const VERSION = '1.3.0'; // Fair leaderboard scoring system
 const CACHE_NAME = `mavi-fit-game-v${VERSION}`;
 const STATIC_CACHE = `static-v${VERSION}`;
 const DYNAMIC_CACHE = `dynamic-v${VERSION}`;
