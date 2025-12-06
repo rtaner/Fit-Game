@@ -10,6 +10,7 @@ import { RulesModal } from '@/components/molecules/RulesModal';
 import { InstallAppCard } from '@/components/molecules/InstallAppCard';
 import { ForceTermsModal } from '@/components/molecules/ForceTermsModal';
 import type { QuizCategory } from '@/types/database.types';
+import packageJson from '@/package.json';
 
 // Kategori isimlerine göre icon mapping
 const getCategoryIcon = (categoryName: string): string => {
@@ -405,7 +406,7 @@ export default function DashboardPage() {
         {!isLoading && categories.length > 0 && (
           <div className="mt-6 pb-2">
             <p className="text-center text-gray-400 text-xs">
-              Hazırlayan: Bilecik Bozüyük Mağazası - Başarılar
+              v{packageJson.version} • Hazırlayan: Bilecik Bozüyük Mağazası - Başarılar
             </p>
           </div>
         )}
