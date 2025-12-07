@@ -30,6 +30,16 @@ export function UpdateNotification() {
       if (lastSeenVersion !== currentVersion) {
         // New version detected
         const updates: Record<string, UpdateInfo> = {
+          '1.4.0': {
+            version: '1.4.0',
+            message: 'Admin panel iyileştirmeleri!',
+            features: [
+              'Mobil uyumlu admin paneli',
+              'Mağaza yöneticisi kullanıcı yönetimi',
+              'Kullanıcı düzenleme özelliği',
+              'Gelişmiş mağaza filtresi'
+            ]
+          },
           '1.3.1': {
             version: '1.3.1',
             message: 'Hata analizi erişimi!',

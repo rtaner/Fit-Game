@@ -250,19 +250,25 @@ export async function deleteUser(
 
 /**
  * Validate admin authorization
+ * Returns user role if authorized, null if not
  */
-export async function validateAdminAuth(userId: string): Promise<boolean> {
+export async function validateAdminAuth(userId: string): Promise<{ isAuthorized: boolean; role?: string; storeCode?: number }> {
   const supabase = createClient();
 
   const { data: user, error } = await supabase
     .from('users')
-    .select('role')
+    .select('role, store_code')
     .eq('id', userId)
     .single();
 
   if (error || !user) {
-    return false;
+    return { isAuthorized: false };
   }
 
-  return user.role === 'admin';
+  const isAuthorized = user.role === 'admin' || user.role === 'store_manager';
+  return { 
+    isAuthorized, 
+    role: user.role,
+    storeCode: user.store_code 
+  };
 }

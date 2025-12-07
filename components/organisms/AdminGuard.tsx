@@ -27,7 +27,8 @@ export function AdminGuard({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    if (user.role !== 'admin') {
+    // Allow both admin and store_manager
+    if (user.role !== 'admin' && user.role !== 'store_manager') {
       router.push('/dashboard');
       return;
     }
@@ -35,7 +36,7 @@ export function AdminGuard({ children }: { children: React.ReactNode }) {
     setIsChecking(false);
   }, [user, router, setUser]);
 
-  if (isChecking || !user || user.role !== 'admin') {
+  if (isChecking || !user || (user.role !== 'admin' && user.role !== 'store_manager')) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-lg">Yetki kontrol ediliyor...</div>

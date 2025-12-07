@@ -15,7 +15,7 @@ export default function AdminDashboardPage() {
     { href: '/admin/categories', label: 'Kategoriler', icon: '📁', description: 'Soru kategorilerini yönet', roles: ['admin'] },
     { href: '/admin/questions', label: 'Sorular', icon: '❓', description: 'Soru bankası yönetimi', roles: ['admin'] },
     { href: '/admin/badges', label: 'Rozetler', icon: '🏆', description: 'Rozet sistemi ayarları', roles: ['admin'] },
-    { href: '/admin/users', label: 'Kullanıcılar', icon: '👥', description: 'Kullanıcı yönetimi ve roller', roles: ['admin'] },
+    { href: '/admin/users', label: 'Kullanıcılar', icon: '👥', description: 'Kullanıcı yönetimi ve roller', roles: ['admin', 'store_manager'] },
     { href: '/admin/error-reports', label: 'Hata Raporları', icon: '⚠️', description: 'Kullanıcı hata bildirimleri', roles: ['admin'] },
     { href: '/admin/analytics', label: 'Analitik', icon: '📊', description: 'Performans ve istatistikler', roles: ['admin', 'store_manager'] },
     { href: '/admin/training-needs', label: 'Eğitim İhtiyacı', icon: '🎯', description: 'Eğitim ihtiyaç analizi', roles: ['admin', 'store_manager'] },

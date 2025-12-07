@@ -15,7 +15,7 @@ export function AdminSidebar() {
     { href: '/admin/categories', label: 'Kategoriler', icon: '📁', roles: ['admin'] },
     { href: '/admin/questions', label: 'Sorular', icon: '❓', roles: ['admin'] },
     { href: '/admin/badges', label: 'Rozetler', icon: '🏆', roles: ['admin'] },
-    { href: '/admin/users', label: 'Kullanıcılar', icon: '👥', roles: ['admin'] },
+    { href: '/admin/users', label: 'Kullanıcılar', icon: '👥', roles: ['admin', 'store_manager'] },
     { href: '/admin/error-reports', label: 'Hata Raporları', icon: '⚠️', roles: ['admin'] },
     { href: '/admin/analytics', label: 'Analitik', icon: '📊', roles: ['admin', 'store_manager'] },
     { href: '/admin/training-needs', label: 'Eğitim İhtiyacı', icon: '🎯', roles: ['admin', 'store_manager'] },

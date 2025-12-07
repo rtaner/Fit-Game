@@ -2,6 +2,48 @@
 
 All notable changes to the Mavi Fit Game project will be documented in this file.
 
+## [1.4.0] - Admin Panel Mobile Responsive + Store Manager Access - 2024-12-07
+
+### Added
+- 📱 **Mobile Responsive Admin Panel**: Stores and Users pages now mobile-friendly
+  - Desktop: Table view with all details
+  - Mobile: Card view with touch-friendly buttons
+  - Responsive design for all screen sizes
+- ✏️ **User Edit Feature**: Edit user information
+  - Edit name, surname, username, and store
+  - Store managers can only edit their store's users
+  - Store managers cannot change user's store
+  - Username uniqueness validation
+- 🔍 **Advanced Store Filter**: Searchable store filter in users page
+  - Search by store name or code
+  - Dropdown with filtered results
+  - Clear button to reset filter
+  - Admin-only feature
+- 👥 **Store Manager User Management**: Store managers can now access users page
+  - View only their store's users
+  - Edit user information (except store)
+  - Reset passwords and generate tokens
+  - Delete users from their store
+  - Cannot change user roles
+
+### Changed
+- 🔐 **AdminGuard**: Now allows both admin and store_manager roles
+- 🎯 **API Authorization**: Enhanced role-based access control
+  - Store managers filtered to their store automatically
+  - Store managers cannot change stores or roles
+  - Proper permission checks on all operations
+
+### Technical
+- Updated: `app/(admin)/admin/stores/page.tsx` - mobile responsive
+- Updated: `app/(admin)/admin/users/page.tsx` - mobile responsive + edit feature
+- Updated: `components/organisms/AdminGuard.tsx` - store_manager support
+- Updated: `services/admin.service.ts` - validateAdminAuth returns role info
+- Updated: `app/api/admin/users/route.ts` - store_manager filtering
+- Updated: `app/api/admin/users/[id]/route.ts` - PATCH method for editing
+- Updated: `app/api/admin/users/[id]/reset-password/route.ts` - store check
+- Updated: `app/api/admin/users/[id]/generate-token/route.ts` - store check
+- Service Worker version: 1.4.0
+
 ## [1.3.1] - Employee Error Analysis Access - 2024-12-07
 
 ### Fixed

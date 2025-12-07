@@ -29,30 +29,37 @@ export async function GET(request: NextRequest) {
 
     // Validate admin authorization
     console.log('Validating admin auth for user:', userId);
-    const isAdmin = await validateAdminAuth(userId);
-    console.log('Is admin:', isAdmin);
+    const authResult = await validateAdminAuth(userId);
+    console.log('Auth result:', JSON.stringify(authResult));
 
-    if (!isAdmin) {
-      console.log('ERROR: User is not admin');
+    if (!authResult.isAuthorized) {
+      console.log('ERROR: User is not authorized. Role:', authResult.role);
       return NextResponse.json(
         {
           error: {
             code: 'FORBIDDEN',
-            message: 'Bu işlem için yetkiniz yok',
+            message: `Bu işlem için yetkiniz yok. Rol: ${authResult.role || 'bilinmiyor'}`,
           },
         },
         { status: 403 }
       );
     }
 
+    console.log('User authorized. Role:', authResult.role, 'Store:', authResult.storeCode);
+
     // Get query parameters (reuse searchParams from above)
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '50');
     const search = searchParams.get('search') || undefined;
     const role = searchParams.get('role') as 'employee' | 'admin' | undefined;
-    const storeCode = searchParams.get('storeCode')
+    let storeCode = searchParams.get('storeCode')
       ? parseInt(searchParams.get('storeCode')!)
       : undefined;
+
+    // If store_manager, force filter to their store only
+    if (authResult.role === 'store_manager' && authResult.storeCode) {
+      storeCode = authResult.storeCode;
+    }
 
     // Get user list
     const result = await getUserList({
@@ -107,14 +114,27 @@ export async function PATCH(request: NextRequest) {
     }
 
     // Validate admin authorization
-    const isAdmin = await validateAdminAuth(currentUserId);
+    const authResult = await validateAdminAuth(currentUserId);
 
-    if (!isAdmin) {
+    if (!authResult.isAuthorized) {
       return NextResponse.json(
         {
           error: {
             code: 'FORBIDDEN',
             message: 'Bu işlem için yetkiniz yok',
+          },
+        },
+        { status: 403 }
+      );
+    }
+
+    // Store managers cannot change roles
+    if (authResult.role === 'store_manager') {
+      return NextResponse.json(
+        {
+          error: {
+            code: 'FORBIDDEN',
+            message: 'Mağaza yöneticileri rol değiştiremez',
           },
         },
         { status: 403 }

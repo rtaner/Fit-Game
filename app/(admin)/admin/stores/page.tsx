@@ -350,7 +350,8 @@ export default function StoresPage() {
         </div>
       )}
 
-      <div className="bg-white shadow-md rounded overflow-hidden">
+      {/* Desktop Table View */}
+      <div className="hidden md:block bg-white shadow-md rounded overflow-hidden">
         <table className="min-w-full">
           <thead className="bg-gray-100">
             <tr>
@@ -406,6 +407,53 @@ export default function StoresPage() {
           <div className="text-center py-8 text-gray-500">
             Henüz mağaza eklenmemiş
           </div>
+        )}
+      </div>
+
+      {/* Mobile Card View */}
+      <div className="md:hidden space-y-4">
+        {stores.length === 0 ? (
+          <div className="text-center py-8 text-gray-500 bg-white rounded-lg">
+            Henüz mağaza eklenmemiş
+          </div>
+        ) : (
+          stores.map((store) => (
+            <div key={store.id} className="bg-white rounded-lg shadow p-4">
+              <div className="flex justify-between items-start mb-3">
+                <div>
+                  <div className="text-sm font-semibold text-gray-900">
+                    {store.store_name}
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1">
+                    Kod: {store.store_code}
+                  </div>
+                </div>
+                <span
+                  className={`px-2 py-1 text-xs rounded ${
+                    store.is_active
+                      ? 'bg-green-100 text-green-800'
+                      : 'bg-red-100 text-red-800'
+                  }`}
+                >
+                  {store.is_active ? 'Aktif' : 'Pasif'}
+                </span>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => handleEdit(store)}
+                  className="flex-1 px-3 py-2 text-sm bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100"
+                >
+                  Düzenle
+                </button>
+                <button
+                  onClick={() => handleDelete(store.id)}
+                  className="flex-1 px-3 py-2 text-sm bg-red-50 text-red-600 rounded-lg hover:bg-red-100"
+                >
+                  Sil
+                </button>
+              </div>
+            </div>
+          ))
         )}
       </div>
       </div>

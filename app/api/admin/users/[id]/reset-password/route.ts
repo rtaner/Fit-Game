@@ -32,9 +32,9 @@ export async function POST(
     }
 
     // Validate admin authorization
-    const isAdmin = await validateAdminAuth(adminId);
+    const authResult = await validateAdminAuth(adminId);
 
-    if (!isAdmin) {
+    if (!authResult.isAuthorized) {
       return NextResponse.json(
         {
           error: {
@@ -44,6 +44,30 @@ export async function POST(
         },
         { status: 403 }
       );
+    }
+
+    // Store managers can only reset passwords for users in their store
+    if (authResult.role === 'store_manager') {
+      const { createClient } = await import('@/lib/supabase/client');
+      const supabase = createClient();
+      
+      const { data: targetUser } = await supabase
+        .from('users')
+        .select('store_code')
+        .eq('id', userId)
+        .single();
+      
+      if (!targetUser || targetUser.store_code !== authResult.storeCode) {
+        return NextResponse.json(
+          {
+            error: {
+              code: 'FORBIDDEN',
+              message: 'Sadece kendi mağazanızdaki kullanıcıların şifresini sıfırlayabilirsiniz',
+            },
+          },
+          { status: 403 }
+        );
+      }
     }
 
     // Generate temporary password
