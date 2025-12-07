@@ -71,6 +71,33 @@ export async function PUT(
   }
 }
 
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const body = await request.json();
+    
+    // Toggle active status
+    if (body.action === 'toggle_active') {
+      await questionService.toggleActiveStatus(id, body.isActive);
+      return NextResponse.json({ data: { success: true } });
+    }
+
+    return NextResponse.json(
+      { error: { code: 'INVALID_ACTION', message: 'Geçersiz işlem' } },
+      { status: 400 }
+    );
+  } catch (error) {
+    console.error('Error patching question:', error);
+    return NextResponse.json(
+      { error: { code: 'PATCH_ERROR', message: 'İşlem başarısız' } },
+      { status: 500 }
+    );
+  }
+}
+
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }

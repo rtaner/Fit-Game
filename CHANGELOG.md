@@ -2,6 +2,29 @@
 
 All notable changes to the Mavi Fit Game project will be documented in this file.
 
+## [1.4.2] - Leaderboard Cache Fix + Toggle UI - 2024-12-08
+
+### Fixed
+- 🐛 **Leaderboard Score Inconsistency**: Fixed cache bug causing score fluctuations
+  - Separate cache for each time filter (Week, Month, All)
+  - Prevents mixing data between different time periods
+  - User scores now consistent across page refreshes
+  - Example: User with 2200 total score no longer shows 1650 (weekly score)
+
+### Changed
+- 🎨 **Toggle Button Design**: Improved active/passive status visibility
+  - iOS/Android style toggle switch
+  - Animated sliding circle (left/right)
+  - Green background for active, gray for passive
+  - Clear visual feedback on state change
+  - Smooth transition animations
+
+### Technical
+- Updated: `services/leaderboard.service.ts` - Map-based cache per filter
+- Updated: `app/(admin)/admin/questions/page.tsx` - toggle switch UI
+- Cache key now properly used: `individual_week`, `individual_month`, `individual_all`
+- Service Worker version: 1.4.2
+
 ## [1.4.1] - Custom Fit Category Feature - 2024-12-07
 
 ### Added

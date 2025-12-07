@@ -243,8 +243,32 @@ export default function QuestionsPage() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const handleToggleActive = async (id: string, currentStatus: boolean) => {
+    const newStatus = !currentStatus;
+    const action = newStatus ? 'aktif' : 'pasif';
+    
+    if (!confirm(`Bu soruyu ${action} yapmak istediğinizden emin misiniz?`)) return;
+
+    try {
+      const response = await fetch(`/api/admin/questions/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'toggle_active', isActive: newStatus }),
+      });
+
+      if (!response.ok) {
+        const result = await response.json();
+        throw new Error(result.error?.message || 'İşlem başarısız');
+      }
+
+      await fetchQuestions(selectedCategory);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Bir hata oluştu');
+    }
+  };
+
   const handleDelete = async (id: string) => {
-    if (!confirm('Bu soruyu silmek istediğinizden emin misiniz?')) return;
+    if (!confirm('Bu soruyu kalıcı olarak silmek istediğinizden emin misiniz? Bu işlem geri alınamaz!')) return;
 
     try {
       const response = await fetch(`/api/admin/questions/${id}`, {
@@ -388,7 +412,14 @@ export default function QuestionsPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-bold mb-2">Fit Kategorisi</label>
+                <label className="block text-sm font-bold mb-2">
+                  {/* Kategori bazlı label */}
+                  {categories.find(cat => cat.id === formData.category_id)?.name === 'Koleksiyonlar' 
+                    ? 'Koleksiyon' 
+                    : categories.find(cat => cat.id === formData.category_id)?.name === 'Prosedürler'
+                    ? 'Prosedür Adı'
+                    : 'Fit Kategorisi'}
+                </label>
                 <select
                   value={formData.fit_category}
                   onChange={(e) => {
@@ -402,32 +433,93 @@ export default function QuestionsPage() {
                   className="w-full px-3 py-2 border rounded"
                 >
                   <option value="">Seçiniz</option>
-                  {formData.gender === 'Erkek' ? (
-                    <>
-                      <option value="SKINNY">SKINNY</option>
-                      <option value="SLIM STRAIGHT">SLIM STRAIGHT</option>
-                      <option value="REGULAR STRAIGHT">REGULAR STRAIGHT</option>
-                      <option value="TAPERED">TAPERED</option>
-                      <option value="LOOSE">LOOSE</option>
-                      <option value="BAGGY">BAGGY</option>
-                      <option value="FLARE">FLARE</option>
-                      <option value="COMFORT">COMFORT</option>
-                      <option value="__custom__">➕ Yeni Kategori Ekle</option>
-                    </>
-                  ) : (
-                    <>
-                      <option value="SUPER SKINNY">SUPER SKINNY</option>
-                      <option value="SKINNY">SKINNY</option>
-                      <option value="MOM">MOM</option>
-                      <option value="BOYFRIEND">BOYFRIEND</option>
-                      <option value="STRAIGHT">STRAIGHT</option>
-                      <option value="SLIM STRAIGHT">SLIM STRAIGHT</option>
-                      <option value="FLARE">FLARE</option>
-                      <option value="WIDE LEG">WIDE LEG</option>
-                      <option value="BAGGY">BAGGY</option>
-                      <option value="__custom__">➕ Yeni Kategori Ekle</option>
-                    </>
-                  )}
+                  {(() => {
+                    const selectedCategory = categories.find(cat => cat.id === formData.category_id);
+                    
+                    // Koleksiyonlar kategorisi için
+                    if (selectedCategory?.name === 'Koleksiyonlar') {
+                      // Mevcut koleksiyonları database'den çek
+                      const existingCollections = Array.from(
+                        new Set(
+                          questions
+                            .filter(q => q.category_id === formData.category_id && q.fit_category)
+                            .map(q => q.fit_category as string)
+                        )
+                      ).sort();
+                      
+                      return (
+                        <>
+                          {existingCollections.map(collection => (
+                            <option key={collection} value={collection}>{collection}</option>
+                          ))}
+                          <option value="__custom__">➕ Yeni Koleksiyon Ekle</option>
+                        </>
+                      );
+                    }
+                    
+                    // Prosedürler kategorisi için
+                    if (selectedCategory?.name === 'Prosedürler') {
+                      const existingProcedures = Array.from(
+                        new Set(
+                          questions
+                            .filter(q => q.category_id === formData.category_id && q.fit_category)
+                            .map(q => q.fit_category as string)
+                        )
+                      ).sort();
+                      
+                      return (
+                        <>
+                          {existingProcedures.map(procedure => (
+                            <option key={procedure} value={procedure}>{procedure}</option>
+                          ))}
+                          <option value="__custom__">➕ Yeni Prosedür Ekle</option>
+                        </>
+                      );
+                    }
+                    
+                    // Denim Fit ve diğer kategoriler için (varsayılan)
+                    if (formData.gender === 'Erkek') {
+                      // Erkek fit kategorileri + database'den gelenler
+                      const defaultFits = ['SKINNY', 'SLIM STRAIGHT', 'REGULAR STRAIGHT', 'TAPERED', 'LOOSE', 'BAGGY', 'FLARE', 'COMFORT'];
+                      const existingFits = Array.from(
+                        new Set(
+                          questions
+                            .filter(q => q.category_id === formData.category_id && q.gender === 'Erkek' && q.fit_category)
+                            .map(q => q.fit_category as string)
+                        )
+                      );
+                      const allFits = Array.from(new Set([...defaultFits, ...existingFits])).sort();
+                      
+                      return (
+                        <>
+                          {allFits.map(fit => (
+                            <option key={fit} value={fit}>{fit}</option>
+                          ))}
+                          <option value="__custom__">➕ Yeni Kategori Ekle</option>
+                        </>
+                      );
+                    } else {
+                      // Kadın fit kategorileri + database'den gelenler
+                      const defaultFits = ['SUPER SKINNY', 'SKINNY', 'MOM', 'BOYFRIEND', 'STRAIGHT', 'SLIM STRAIGHT', 'FLARE', 'WIDE LEG', 'BAGGY'];
+                      const existingFits = Array.from(
+                        new Set(
+                          questions
+                            .filter(q => q.category_id === formData.category_id && q.gender === 'Kadın' && q.fit_category)
+                            .map(q => q.fit_category as string)
+                        )
+                      );
+                      const allFits = Array.from(new Set([...defaultFits, ...existingFits])).sort();
+                      
+                      return (
+                        <>
+                          {allFits.map(fit => (
+                            <option key={fit} value={fit}>{fit}</option>
+                          ))}
+                          <option value="__custom__">➕ Yeni Kategori Ekle</option>
+                        </>
+                      );
+                    }
+                  })()}
                 </select>
                 
                 {/* Custom fit category input */}
@@ -437,12 +529,20 @@ export default function QuestionsPage() {
                       type="text"
                       value={customFitCategory}
                       onChange={(e) => setCustomFitCategory(e.target.value)}
-                      placeholder="Yeni fit kategorisi adını yazın (örn: LOOSE FIT)"
+                      placeholder={
+                        categories.find(cat => cat.id === formData.category_id)?.name === 'Koleksiyonlar'
+                          ? 'Yeni koleksiyon adını yazın (örn: MAVİ EDITION)'
+                          : categories.find(cat => cat.id === formData.category_id)?.name === 'Prosedürler'
+                          ? 'Yeni prosedür adını yazın (örn: ÜRÜN İADESİ)'
+                          : 'Yeni fit kategorisi adını yazın (örn: LOOSE FIT)'
+                      }
                       className="w-full px-3 py-2 border border-blue-500 rounded focus:ring-2 focus:ring-blue-500"
                       autoFocus
                     />
                     <p className="text-xs text-gray-500 mt-1">
-                      💡 Kategori adı otomatik olarak büyük harfe çevrilecektir
+                      💡 {categories.find(cat => cat.id === formData.category_id)?.name === 'Koleksiyonlar' 
+                        ? 'Koleksiyon adı otomatik olarak büyük harfe çevrilecektir' 
+                        : 'Kategori adı otomatik olarak büyük harfe çevrilecektir'}
                     </p>
                   </div>
                 )}
@@ -588,24 +688,37 @@ export default function QuestionsPage() {
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <span className={`px-2 py-1 text-xs rounded ${
-                      question.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                    }`}>
-                      {question.is_active ? 'Aktif' : 'Pasif'}
-                    </span>
+                    <button
+                      onClick={() => handleToggleActive(question.id, question.is_active)}
+                      className="inline-flex items-center cursor-pointer"
+                      title={question.is_active ? 'Pasif yap' : 'Aktif yap'}
+                    >
+                      <div className={`relative w-14 h-7 rounded-full transition-colors ${
+                        question.is_active ? 'bg-green-500' : 'bg-gray-300'
+                      }`}>
+                        <div className={`absolute top-0.5 left-0.5 w-6 h-6 bg-white rounded-full shadow-md transition-transform duration-200 ${
+                          question.is_active ? 'translate-x-7' : 'translate-x-0'
+                        }`} />
+                      </div>
+                      <span className={`ml-3 text-sm font-medium ${
+                        question.is_active ? 'text-green-700' : 'text-gray-500'
+                      }`}>
+                        {question.is_active ? 'Aktif' : 'Pasif'}
+                      </span>
+                    </button>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <button
                       onClick={() => handleEdit(question)}
-                      className="text-blue-600 hover:text-blue-800 mr-3"
+                      className="text-blue-600 hover:text-blue-800 mr-3 font-medium"
                     >
                       Düzenle
                     </button>
                     <button
                       onClick={() => handleDelete(question.id)}
-                      className="text-red-600 hover:text-red-800"
+                      className="text-red-600 hover:text-red-800 font-medium"
                     >
-                      Sil
+                      🗑️ Sil
                     </button>
                   </td>
                 </tr>

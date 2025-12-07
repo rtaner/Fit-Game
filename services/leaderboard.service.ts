@@ -26,8 +26,8 @@ export interface StoreLeaderboardEntry {
   totalPlayers: number;
 }
 
-// Simple in-memory cache
-let individualCache: { data: LeaderboardEntry[]; timestamp: number } | null = null;
+// Simple in-memory cache - separate cache for each time filter
+const individualCacheMap = new Map<string, { data: LeaderboardEntry[]; timestamp: number }>();
 let storeCache: { data: StoreLeaderboardEntry[]; timestamp: number } | null = null;
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
@@ -35,8 +35,9 @@ export const leaderboardService = {
   async getIndividualLeaderboard(limit: number = 100, timeFilter: 'week' | 'month' | 'all' = 'all'): Promise<LeaderboardEntry[]> {
     // Check cache (separate cache for each time filter)
     const cacheKey = `individual_${timeFilter}`;
-    if (individualCache && individualCache.timestamp && Date.now() - individualCache.timestamp < CACHE_TTL) {
-      return individualCache.data;
+    const cachedData = individualCacheMap.get(cacheKey);
+    if (cachedData && Date.now() - cachedData.timestamp < CACHE_TTL) {
+      return cachedData.data;
     }
 
     const supabase = createClient();
@@ -174,11 +175,11 @@ export const leaderboardService = {
         rank: index + 1,
       }));
 
-    // Update cache
-    individualCache = {
+    // Update cache with correct key
+    individualCacheMap.set(cacheKey, {
       data: leaderboard,
       timestamp: Date.now(),
-    };
+    });
 
     return leaderboard;
   },
@@ -261,7 +262,7 @@ export const leaderboardService = {
   },
 
   clearCache() {
-    individualCache = null;
+    individualCacheMap.clear();
     storeCache = null;
   },
 };

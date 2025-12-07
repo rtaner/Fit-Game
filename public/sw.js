@@ -1,6 +1,6 @@
 // Service Worker for Mavi Fit Game PWA
 // VERSION: Update this number when you want to force update
-const VERSION = '1.4.1'; // Custom fit category feature
+const VERSION = '1.4.2'; // Leaderboard cache fix + Toggle button UI
 const CACHE_NAME = `mavi-fit-game-v${VERSION}`;
 const STATIC_CACHE = `static-v${VERSION}`;
 const DYNAMIC_CACHE = `dynamic-v${VERSION}`;

@@ -30,6 +30,16 @@ export function UpdateNotification() {
       if (lastSeenVersion !== currentVersion) {
         // New version detected
         const updates: Record<string, UpdateInfo> = {
+          '1.4.2': {
+            version: '1.4.2',
+            message: 'Skor tutarsızlığı düzeltildi!',
+            features: [
+              'Leaderboard skor karışması sorunu çözüldü',
+              'Her zaman filtresi için ayrı cache',
+              'Toggle buton tasarımı iyileştirildi',
+              'Daha stabil performans'
+            ]
+          },
           '1.4.1': {
             version: '1.4.1',
             message: 'Yeni fit kategorisi ekleme!',

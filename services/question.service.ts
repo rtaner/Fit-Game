@@ -155,13 +155,26 @@ export const questionService = {
   },
 
   /**
-   * Delete question (soft delete)
+   * Toggle question active status
+   */
+  async toggleActiveStatus(id: string, isActive: boolean): Promise<void> {
+    const supabase = createClient();
+    const { error } = await supabase
+      .from('question_items')
+      .update({ is_active: isActive, updated_at: new Date().toISOString() })
+      .eq('id', id);
+
+    if (error) throw error;
+  },
+
+  /**
+   * Delete question (hard delete)
    */
   async deleteQuestion(id: string): Promise<void> {
     const supabase = createClient();
     const { error } = await supabase
       .from('question_items')
-      .update({ is_active: false, updated_at: new Date().toISOString() })
+      .delete()
       .eq('id', id);
 
     if (error) throw error;
