@@ -30,6 +30,16 @@ export function UpdateNotification() {
       if (lastSeenVersion !== currentVersion) {
         // New version detected
         const updates: Record<string, UpdateInfo> = {
+          '1.4.1': {
+            version: '1.4.1',
+            message: 'Yeni fit kategorisi ekleme!',
+            features: [
+              'Listede olmayan fit kategorisi ekleyebilme',
+              'Kadın için LOOSE FIT gibi özel kategoriler',
+              'Dropdown altında "Yeni Kategori Ekle" seçeneği',
+              'Otomatik büyük harf dönüşümü'
+            ]
+          },
           '1.4.0': {
             version: '1.4.0',
             message: 'Admin panel iyileştirmeleri!',

@@ -2,6 +2,30 @@
 
 All notable changes to the Mavi Fit Game project will be documented in this file.
 
+## [1.4.1] - Custom Fit Category Feature - 2024-12-07
+
+### Added
+- ➕ **Custom Fit Category**: Add new fit categories on the fly
+  - "Yeni Kategori Ekle" option at bottom of dropdown
+  - Text input appears when selected
+  - Automatic uppercase conversion
+  - Works for both Kadın and Erkek categories
+  - Example: Add "LOOSE FIT" for Kadın category
+
+### Changed
+- 🎯 **Fit Category Dropdown**: Enhanced with custom input
+  - Shows predefined categories first
+  - "➕ Yeni Kategori Ekle" at the end
+  - Input field with blue border when active
+  - Helper text for user guidance
+
+### Technical
+- Updated: `app/(admin)/admin/questions/page.tsx` - custom fit input
+- Added state management for custom category input
+- Gender change resets custom input
+- Edit mode detects custom categories automatically
+- Service Worker version: 1.4.1
+
 ## [1.4.0] - Admin Panel Mobile Responsive + Store Manager Access - 2024-12-07
 
 ### Added

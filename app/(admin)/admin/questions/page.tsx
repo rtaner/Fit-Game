@@ -29,6 +29,8 @@ export default function QuestionsPage() {
     explanation: '',
     tags: '',
   });
+  const [showCustomFitInput, setShowCustomFitInput] = useState(false);
+  const [customFitCategory, setCustomFitCategory] = useState('');
 
   useEffect(() => {
     fetchCategories();
@@ -168,13 +170,18 @@ export default function QuestionsPage() {
       
       const method = editingQuestion ? 'PUT' : 'POST';
       
+      // Determine final fit_category value
+      const finalFitCategory = formData.fit_category === '__custom__' 
+        ? customFitCategory.trim().toUpperCase()
+        : formData.fit_category;
+
       const payload: any = {
         name: formData.name,
         image_url: formData.image_url,
         cloudinary_public_id: formData.cloudinary_public_id || undefined,
         images: formData.images.length > 0 ? formData.images : undefined,
         gender: formData.gender,
-        fit_category: formData.fit_category || undefined,
+        fit_category: finalFitCategory || undefined,
         description: formData.description,
         explanation: formData.explanation || undefined,
         tags: formData.tags.split(',').map(t => t.trim()).filter(Boolean),
@@ -206,6 +213,16 @@ export default function QuestionsPage() {
 
   const handleEdit = (question: QuestionItem) => {
     setEditingQuestion(question);
+    const fitCat = (question as any).fit_category || '';
+    
+    // Check if fit category is in predefined list
+    const predefinedCategories = [
+      'SUPER SKINNY', 'SKINNY', 'MOM', 'BOYFRIEND', 'STRAIGHT', 'SLIM STRAIGHT',
+      'FLARE', 'WIDE LEG', 'BAGGY', 'REGULAR STRAIGHT', 'TAPERED', 'LOOSE', 'COMFORT'
+    ];
+    
+    const isCustom = fitCat && !predefinedCategories.includes(fitCat);
+    
     setFormData({
       category_id: question.category_id,
       name: question.name,
@@ -213,11 +230,13 @@ export default function QuestionsPage() {
       cloudinary_public_id: question.cloudinary_public_id || '',
       images: (question as any).images || [],
       gender: (question as any).gender || 'Kadın',
-      fit_category: (question as any).fit_category || '',
+      fit_category: isCustom ? '__custom__' : fitCat,
       description: question.description,
       explanation: question.explanation || '',
       tags: question.tags.join(', '),
     });
+    setShowCustomFitInput(isCustom);
+    setCustomFitCategory(isCustom ? fitCat : '');
     setShowForm(true);
     
     // Scroll to top smoothly
@@ -258,6 +277,8 @@ export default function QuestionsPage() {
     });
     setEditingQuestion(null);
     setShowForm(false);
+    setShowCustomFitInput(false);
+    setCustomFitCategory('');
   };
 
   if (isLoading) {
@@ -356,6 +377,8 @@ export default function QuestionsPage() {
                   onChange={(e) => {
                     const newGender = e.target.value as 'Kadın' | 'Erkek';
                     setFormData({ ...formData, gender: newGender, fit_category: '' });
+                    setShowCustomFitInput(false);
+                    setCustomFitCategory('');
                   }}
                   required
                   className="w-full px-3 py-2 border rounded"
@@ -368,7 +391,14 @@ export default function QuestionsPage() {
                 <label className="block text-sm font-bold mb-2">Fit Kategorisi</label>
                 <select
                   value={formData.fit_category}
-                  onChange={(e) => setFormData({ ...formData, fit_category: e.target.value })}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setFormData({ ...formData, fit_category: value });
+                    setShowCustomFitInput(value === '__custom__');
+                    if (value !== '__custom__') {
+                      setCustomFitCategory('');
+                    }
+                  }}
                   className="w-full px-3 py-2 border rounded"
                 >
                   <option value="">Seçiniz</option>
@@ -382,6 +412,7 @@ export default function QuestionsPage() {
                       <option value="BAGGY">BAGGY</option>
                       <option value="FLARE">FLARE</option>
                       <option value="COMFORT">COMFORT</option>
+                      <option value="__custom__">➕ Yeni Kategori Ekle</option>
                     </>
                   ) : (
                     <>
@@ -394,9 +425,27 @@ export default function QuestionsPage() {
                       <option value="FLARE">FLARE</option>
                       <option value="WIDE LEG">WIDE LEG</option>
                       <option value="BAGGY">BAGGY</option>
+                      <option value="__custom__">➕ Yeni Kategori Ekle</option>
                     </>
                   )}
                 </select>
+                
+                {/* Custom fit category input */}
+                {showCustomFitInput && (
+                  <div className="mt-2">
+                    <input
+                      type="text"
+                      value={customFitCategory}
+                      onChange={(e) => setCustomFitCategory(e.target.value)}
+                      placeholder="Yeni fit kategorisi adını yazın (örn: LOOSE FIT)"
+                      className="w-full px-3 py-2 border border-blue-500 rounded focus:ring-2 focus:ring-blue-500"
+                      autoFocus
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      💡 Kategori adı otomatik olarak büyük harfe çevrilecektir
+                    </p>
+                  </div>
+                )}
               </div>
               <div className="md:col-span-2">
                 <label className="block text-sm font-bold mb-2">Görseller *</label>
