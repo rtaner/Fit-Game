@@ -437,7 +437,7 @@ export default function TrainingPage() {
       </AnimatePresence>
 
       {/* Flash Card - Tinder Style with Swipe */}
-      <div className="flex-1 flex flex-col px-5 py-3 overflow-hidden">
+      <div className="flex-1 flex flex-col px-5 pb-20 overflow-hidden">
         {currentIndex >= cards.length ? (
           // Completion Screen
           <div className="text-center my-auto">
@@ -484,14 +484,14 @@ export default function TrainingPage() {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
               transition={{ duration: 0.2 }}
-              className="flex-1 flex flex-col bg-white rounded-3xl shadow-lg overflow-hidden cursor-grab active:cursor-grabbing max-h-[calc(100vh-280px)]"
+              className="flex-1 flex flex-col bg-white rounded-3xl shadow-lg overflow-hidden cursor-grab active:cursor-grabbing"
             >
               {/* Image Container */}
               <div className="relative flex-1 bg-slate-100 flex items-center justify-center overflow-hidden rounded-t-3xl min-h-0">
                 <img
                   src={currentCard.imageUrl}
                   alt={currentCard.name}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-contain"
                   draggable={false}
                 />
                 

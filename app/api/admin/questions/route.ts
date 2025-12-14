@@ -17,6 +17,8 @@ const createQuestionSchema = z.object({
   description: z.string().min(1),
   explanation: z.string().optional(),
   tags: z.array(z.string()),
+  gender: z.enum(['Kadın', 'Erkek']).optional(),
+  fit_category: z.string().optional(),
   is_active: z.boolean().optional(),
 });
 

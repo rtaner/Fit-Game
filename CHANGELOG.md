@@ -2,6 +2,41 @@
 
 All notable changes to the Mavi Fit Game project will be documented in this file.
 
+## [1.4.4] - Training & Admin Improvements - 2024-12-08
+
+### Fixed
+- 🖼️ **Training Image Display**: Training card images now show in full height
+  - Changed from `object-cover` to `object-contain`
+  - Full image visible without cropping
+  - Width adjusts automatically if needed
+  - Better learning experience
+
+- 📝 **Admin Question Form**: Fixed gender and category not showing in edit mode
+  - Added `gender` and `fit_category` to API validation schemas
+  - Edit mode now correctly displays saved gender and category
+  - Custom categories properly detected and shown
+
+### Changed
+- ✨ **New Category Workflow**: Improved UX when adding custom categories
+  - Form stays open after saving question
+  - New category immediately visible in dropdown
+  - Category and gender selection preserved
+  - Success message confirms category is available
+  - Faster workflow for adding multiple questions
+
+- 📐 **Training Card Layout**: Optimized space usage
+  - Extended card to use bottom navigation space
+  - Removed max-height restriction
+  - More room for images
+  - Better mobile experience
+
+### Technical
+- Updated: `app/(game)/training/page.tsx` - object-contain for images, extended card height
+- Updated: `app/api/admin/questions/route.ts` - added gender and fit_category validation
+- Updated: `app/api/admin/questions/[id]/route.ts` - added gender and fit_category validation
+- Updated: `app/(admin)/admin/questions/page.tsx` - form stays open after save
+- Service Worker version: 1.4.4
+
 ## [1.4.3] - Leaderboard Major Improvements - 2024-12-08
 
 ### Changed

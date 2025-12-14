@@ -205,7 +205,26 @@ export default function QuestionsPage() {
       }
 
       await fetchQuestions(selectedCategory);
-      resetForm();
+      
+      // Don't close form, just reset fields so user can see new category in dropdown
+      setFormData({
+        category_id: formData.category_id, // Keep selected category
+        name: '',
+        image_url: '',
+        cloudinary_public_id: '',
+        images: [],
+        gender: formData.gender, // Keep selected gender
+        fit_category: '', // Reset to show new category in dropdown
+        description: '',
+        explanation: '',
+        tags: '',
+      });
+      setEditingQuestion(null);
+      setShowCustomFitInput(false);
+      setCustomFitCategory('');
+      
+      // Show success message
+      alert('Soru başarıyla eklendi! Yeni kategori artık listede görünüyor.');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Bir hata oluştu');
     }

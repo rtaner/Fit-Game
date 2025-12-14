@@ -30,6 +30,16 @@ export function UpdateNotification() {
       if (lastSeenVersion !== currentVersion) {
         // New version detected
         const updates: Record<string, UpdateInfo> = {
+          '1.4.4': {
+            version: '1.4.4',
+            message: 'Eğitim ve admin iyileştirmeleri!',
+            features: [
+              'Eğitim görselleri tam boy görünür',
+              'Yeni kategori dropdown\'da hemen görünür',
+              'Cinsiyet ve kategori düzenleme düzeltildi',
+              'Form açık kalır, hızlı soru ekleme'
+            ]
+          },
           '1.4.3': {
             version: '1.4.3',
             message: 'Liderlik tablosu iyileştirmeleri!',
