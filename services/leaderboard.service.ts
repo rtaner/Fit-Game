@@ -47,64 +47,91 @@ export const leaderboardService = {
     const now = new Date();
     
     if (timeFilter === 'week') {
-      const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-      dateFilter = weekAgo.toISOString();
+      // Get Monday of current week (week starts on Monday)
+      const currentDay = now.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+      const daysFromMonday = currentDay === 0 ? 6 : currentDay - 1; // If Sunday, go back 6 days
+      const monday = new Date(now);
+      monday.setDate(now.getDate() - daysFromMonday);
+      monday.setHours(0, 0, 0, 0); // Start of Monday
+      dateFilter = monday.toISOString();
     } else if (timeFilter === 'month') {
-      const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-      dateFilter = monthAgo.toISOString();
+      // Get first day of current month
+      const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      firstDayOfMonth.setHours(0, 0, 0, 0);
+      dateFilter = firstDayOfMonth.toISOString();
     }
 
-    // Build query with automatic join via foreign key
-    let query = supabase
-      .from('game_sessions')
-      .select(`
-        score,
-        user_id,
-        ended_at,
-        users!inner(username, store_code, active_badge_id, stores(store_name))
-      `)
-      .order('score', { ascending: false })
-      .limit(limit * 2); // Get more to handle duplicates
+    // STEP 1: Get ALL users first
+    const { data: allUsers, error: usersError } = await supabase
+      .from('users')
+      .select('id, username, store_code, active_badge_id, stores(store_name)')
+      .order('username');
 
-    // Apply date filter if needed
-    if (dateFilter) {
-      query = query.gte('ended_at', dateFilter);
-    }
-
-    const { data: sessions, error } = await query;
-
-    if (error || !sessions) {
-      console.error('Error fetching leaderboard:', error);
+    if (usersError || !allUsers) {
+      console.error('Error fetching users:', usersError);
       return [];
     }
 
-    // Group by user and calculate total score + highest score
-    const userScores = new Map<string, { username: string; storeCode: number; storeName: string; totalScore: number; highScore: number; games: number; activeBadgeId: string | null }>();
+    // STEP 2: Get game sessions (with date filter if needed)
+    let sessionsQuery = supabase
+      .from('game_sessions')
+      .select('score, user_id, ended_at')
+      .not('ended_at', 'is', null);
 
-    sessions.forEach((session: any) => {
+    // Apply date filter if needed
+    if (dateFilter) {
+      sessionsQuery = sessionsQuery.gte('ended_at', dateFilter);
+    }
+
+    const { data: sessions, error: sessionsError } = await sessionsQuery;
+
+    if (sessionsError) {
+      console.error('Error fetching sessions:', sessionsError);
+      return [];
+    }
+
+    // STEP 3: Group sessions by user
+    const userSessionsMap = new Map<string, { totalScore: number; highScore: number; games: number }>();
+    
+    sessions?.forEach((session: any) => {
       const userId = session.user_id;
-      const score = session.score;
-      const username = session.users?.username || 'Unknown';
-      const storeCode = session.users?.store_code || 0;
-      const storeName = session.users?.stores?.store_name || `Mağaza ${storeCode}`;
-      const activeBadgeId = session.users?.active_badge_id || null;
+      const score = session.score || 0;
 
-      if (userScores.has(userId)) {
-        const existing = userScores.get(userId)!;
-        existing.totalScore += score; // Add to total score
-        existing.highScore = Math.max(existing.highScore, score); // Track highest single game
+      if (userSessionsMap.has(userId)) {
+        const existing = userSessionsMap.get(userId)!;
+        existing.totalScore += score;
+        existing.highScore = Math.max(existing.highScore, score);
         existing.games += 1;
       } else {
-        userScores.set(userId, {
-          username,
-          storeCode,
-          storeName,
-          totalScore: score, // Initialize with first score
-          highScore: score, // Initialize with first score
+        userSessionsMap.set(userId, {
+          totalScore: score,
+          highScore: score,
           games: 1,
-          activeBadgeId,
         });
       }
+    });
+
+    // STEP 4: Combine all users with their scores (0 if no games in period)
+    const userScores = new Map<string, { username: string; storeCode: number; storeName: string; totalScore: number; highScore: number; games: number; activeBadgeId: string | null }>();
+
+    allUsers.forEach((user: any) => {
+      const userId = user.id;
+      const username = user.username || 'Unknown';
+      const storeCode = user.store_code || 0;
+      const storeName = user.stores?.store_name || `Mağaza ${storeCode}`;
+      const activeBadgeId = user.active_badge_id || null;
+
+      const userSessions = userSessionsMap.get(userId);
+
+      userScores.set(userId, {
+        username,
+        storeCode,
+        storeName,
+        totalScore: userSessions?.totalScore || 0,
+        highScore: userSessions?.highScore || 0,
+        games: userSessions?.games || 0,
+        activeBadgeId,
+      });
     });
 
     // Get all unique active badge IDs
@@ -192,8 +219,26 @@ export const leaderboardService = {
 
     const supabase = createClient();
 
-    // Get all sessions with user data
-    const { data: sessions, error } = await supabase
+    // STEP 1: Get all stores that have members
+    const { data: storesWithMembers, error: storesError } = await supabase
+      .from('users')
+      .select('store_code')
+      .not('store_code', 'is', null);
+
+    if (storesError) {
+      console.error('Error fetching stores with members:', storesError);
+      return [];
+    }
+
+    // Get unique store codes that have members
+    const storeCodesWithMembers = Array.from(new Set(storesWithMembers?.map(u => u.store_code) || []));
+
+    // STEP 2: Get store names
+    const { data: stores } = await supabase.from('stores').select('store_code, store_name');
+    const storeMap = new Map(stores?.map((s) => [s.store_code, s.store_name]) || []);
+
+    // STEP 3: Get all game sessions
+    const { data: sessions, error: sessionsError } = await supabase
       .from('game_sessions')
       .select(`
         score,
@@ -201,20 +246,15 @@ export const leaderboardService = {
         users!inner(store_code)
       `);
 
-    if (error || !sessions) {
-      console.error('Error fetching store leaderboard:', error);
+    if (sessionsError) {
+      console.error('Error fetching sessions:', sessionsError);
       return [];
     }
 
-    // Get store names
-    const { data: stores } = await supabase.from('stores').select('store_code, store_name');
-
-    const storeMap = new Map(stores?.map((s) => [s.store_code, s.store_name]) || []);
-
-    // Group by store
+    // STEP 4: Group sessions by store
     const storeScores = new Map<number, { totalScore: number; games: number; players: Set<string> }>();
 
-    sessions.forEach((session: any) => {
+    sessions?.forEach((session: any) => {
       const storeCode = session.users?.store_code;
       const score = session.score;
       const userId = session.user_id;
@@ -235,18 +275,29 @@ export const leaderboardService = {
       }
     });
 
-    // Convert to array and calculate averages
-    const leaderboard: StoreLeaderboardEntry[] = Array.from(storeScores.entries())
-      .map(([storeCode, data]) => ({
-        rank: 0,
-        storeCode,
-        storeName: storeMap.get(storeCode) || `Mağaza ${storeCode}`,
-        averageScore: data.totalScore / data.games,
-        totalGames: data.games,
-        totalPlayers: data.players.size,
-      }))
+    // STEP 5: Get member count for each store
+    const storeMemberCount = new Map<number, number>();
+    storesWithMembers?.forEach((user: any) => {
+      const storeCode = user.store_code;
+      storeMemberCount.set(storeCode, (storeMemberCount.get(storeCode) || 0) + 1);
+    });
+
+    // STEP 6: Create leaderboard with ALL stores that have members
+    const leaderboard: StoreLeaderboardEntry[] = storeCodesWithMembers
+      .map((storeCode) => {
+        const storeData = storeScores.get(storeCode);
+        const memberCount = storeMemberCount.get(storeCode) || 0;
+
+        return {
+          rank: 0,
+          storeCode,
+          storeName: storeMap.get(storeCode) || `Mağaza ${storeCode}`,
+          averageScore: storeData ? storeData.totalScore / storeData.games : 0,
+          totalGames: storeData?.games || 0,
+          totalPlayers: memberCount,
+        };
+      })
       .sort((a, b) => b.averageScore - a.averageScore)
-      .slice(0, limit)
       .map((entry, index) => ({
         ...entry,
         rank: index + 1,

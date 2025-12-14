@@ -2,6 +2,41 @@
 
 All notable changes to the Mavi Fit Game project will be documented in this file.
 
+## [1.4.3] - Leaderboard Major Improvements - 2024-12-08
+
+### Changed
+- 📊 **Show All Users in Leaderboard**: All registered users now visible in all time filters
+  - Users who haven't played in selected period show 0 score
+  - Motivates inactive users to start playing
+  - More transparent ranking system
+  - Example: Weekly shows all users, inactive ones with 0 points
+
+- 📅 **Week Calculation**: Changed from rolling 7 days to Monday-Sunday
+  - Weekly leaderboard resets every Monday at 00:00
+  - Clear competition period (Monday to Sunday)
+  - More predictable and fair for users
+  - Example: Wednesday shows scores from Monday 00:00 to now
+
+- 📅 **Month Calculation**: Changed from rolling 30 days to calendar month
+  - Monthly leaderboard resets on 1st of each month at 00:00
+  - Follows natural calendar month boundaries
+  - Example: December 15th shows scores from December 1st 00:00 to now
+
+- 🏪 **Store Leaderboard**: Now shows ALL stores with members
+  - Previously: Only stores with game sessions
+  - Now: All stores that have registered members
+  - Stores without games show 0 average score
+  - Removed artificial limit, shows all active stores
+  - Example: 15 stores with members, 10 played games, all 15 visible
+
+### Technical
+- Updated: `services/leaderboard.service.ts` - complete rewrite of leaderboard logic
+  - Individual: Fetch all users first, then filter sessions by date
+  - Store: Fetch all stores with members, then calculate scores
+  - Week: Monday 00:00 to now (not rolling 7 days)
+  - Month: 1st of month 00:00 to now (not rolling 30 days)
+- Service Worker version: 1.4.3
+
 ## [1.4.2] - Leaderboard Cache Fix + Toggle UI - 2024-12-08
 
 ### Fixed
