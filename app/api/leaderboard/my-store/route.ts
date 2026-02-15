@@ -5,6 +5,7 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const storeCode = searchParams.get('storeCode');
+    const timeFilter = (searchParams.get('timeFilter') || 'all') as 'week' | 'month' | 'all';
 
     if (!storeCode) {
       return NextResponse.json(
@@ -15,23 +16,63 @@ export async function GET(request: NextRequest) {
 
     const supabase = await createClient();
 
-    // Get all users from the same store with their game sessions
-    const { data: users, error } = await supabase
+    // Calculate date filter
+    let dateFilter: string | null = null;
+    const now = new Date();
+    
+    if (timeFilter === 'week') {
+      // Get Monday of current week (week starts on Monday)
+      const currentDay = now.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+      const daysFromMonday = currentDay === 0 ? 6 : currentDay - 1; // If Sunday, go back 6 days
+      const monday = new Date(now);
+      monday.setDate(now.getDate() - daysFromMonday);
+      monday.setHours(0, 0, 0, 0); // Start of Monday
+      dateFilter = monday.toISOString();
+    } else if (timeFilter === 'month') {
+      // Get first day of current month
+      const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      firstDayOfMonth.setHours(0, 0, 0, 0);
+      dateFilter = firstDayOfMonth.toISOString();
+    }
+
+    // Get all users from the same store
+    const { data: allUsers, error: usersError } = await supabase
       .from('users')
       .select(`
         id,
         username,
         store_code,
         active_badge_id,
-        stores(store_name),
-        game_sessions(score)
+        stores(store_name)
       `)
       .eq('store_code', parseInt(storeCode));
 
-    if (error) {
-      console.error('Error fetching store leaderboard:', error);
+    if (usersError || !allUsers) {
+      console.error('Error fetching users:', usersError);
       return NextResponse.json(
         { error: { code: 'FETCH_ERROR', message: 'Liderlik tablosu yüklenemedi' } },
+        { status: 500 }
+      );
+    }
+
+    // Get game sessions for these users (with date filter if needed)
+    let sessionsQuery = supabase
+      .from('game_sessions')
+      .select('score, user_id, ended_at')
+      .in('user_id', allUsers.map(u => u.id))
+      .not('ended_at', 'is', null);
+
+    // Apply date filter if needed
+    if (dateFilter) {
+      sessionsQuery = sessionsQuery.gte('ended_at', dateFilter);
+    }
+
+    const { data: sessions, error: sessionsError } = await sessionsQuery;
+
+    if (sessionsError) {
+      console.error('Error fetching sessions:', sessionsError);
+      return NextResponse.json(
+        { error: { code: 'FETCH_ERROR', message: 'Oyun verileri yüklenemedi' } },
         { status: 500 }
       );
     }
@@ -39,31 +80,36 @@ export async function GET(request: NextRequest) {
     // Calculate total score, highest score and total games for each user
     const userStats = new Map<string, { username: string; storeCode: number; storeName: string; totalScore: number; highScore: number; totalGames: number; activeBadgeId: string | null }>();
 
-    users?.forEach((user: any) => {
-      if (!userStats.has(user.id)) {
-        const storeName = user.stores?.store_name || `Mağaza ${user.store_code}`;
-        userStats.set(user.id, {
-          username: user.username,
-          storeCode: user.store_code,
-          storeName: storeName,
-          totalScore: 0,
-          highScore: 0,
-          totalGames: 0,
-          activeBadgeId: user.active_badge_id || null,
-        });
-      }
+    allUsers.forEach((user: any) => {
+      const userId = user.id;
+      const username = user.username || 'Unknown';
+      const storeCode = user.store_code || 0;
+      const storeName = user.stores?.store_name || `Mağaza ${storeCode}`;
+      const activeBadgeId = user.active_badge_id || null;
 
-      const stats = userStats.get(user.id)!;
-      
-      // Process all game sessions for this user
-      if (user.game_sessions && Array.isArray(user.game_sessions)) {
-        user.game_sessions.forEach((session: any) => {
-          stats.totalGames++;
-          stats.totalScore += session.score; // Add to total score
-          if (session.score > stats.highScore) {
-            stats.highScore = session.score; // Track highest score
-          }
-        });
+      userStats.set(userId, {
+        username,
+        storeCode,
+        storeName,
+        totalScore: 0,
+        highScore: 0,
+        totalGames: 0,
+        activeBadgeId,
+      });
+    });
+
+    // Process game sessions
+    sessions?.forEach((session: any) => {
+      const userId = session.user_id;
+      const score = session.score || 0;
+
+      if (userStats.has(userId)) {
+        const stats = userStats.get(userId)!;
+        stats.totalGames++;
+        stats.totalScore += score;
+        if (score > stats.highScore) {
+          stats.highScore = score;
+        }
       }
     });
 

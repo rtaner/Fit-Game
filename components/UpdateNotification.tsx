@@ -30,6 +30,16 @@ export function UpdateNotification() {
       if (lastSeenVersion !== currentVersion) {
         // New version detected
         const updates: Record<string, UpdateInfo> = {
+          '1.4.5': {
+            version: '1.4.5',
+            message: 'Zaman filtreleri düzeltildi!',
+            features: [
+              'Haftalık/Aylık filtreler artık çalışıyor',
+              'Mağazalar sekmesi zaman filtreli',
+              'Mağazam sekmesi zaman filtreli',
+              'Her sekme için ayrı cache sistemi'
+            ]
+          },
           '1.4.4': {
             version: '1.4.4',
             message: 'Eğitim ve admin iyileştirmeleri!',

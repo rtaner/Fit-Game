@@ -2,6 +2,42 @@
 
 All notable changes to the Mavi Fit Game project will be documented in this file.
 
+## [1.4.5] - Leaderboard Time Filters Fixed - 2024-12-08
+
+### Fixed
+- 🐛 **Time Filters Not Working**: Fixed time filters for all leaderboard tabs
+  - **Mağazalar (Stores)**: Now respects Haftalık/Aylık/Tüm Zamanlar selection
+  - **Mağazam (My Store)**: Now respects time filter selection
+  - **Bireysel (Individual)**: Already working, maintained
+  - All three tabs now properly filter by selected time period
+
+### Changed
+- 🔄 **Store Leaderboard Service**: Added time filter support
+  - Separate cache for each time filter (`store_week`, `store_month`, `store_all`)
+  - Date filtering applied to game sessions
+  - Week: Monday-Sunday calculation
+  - Month: Calendar month calculation
+  
+- 🔄 **My Store API**: Added time filter support
+  - Accepts `timeFilter` query parameter
+  - Filters game sessions by date range
+  - Shows all store members with 0 score if no games in period
+  - Week: Monday-Sunday calculation
+  - Month: Calendar month calculation
+
+- 🔄 **Frontend API Calls**: All leaderboard APIs now receive time filter
+  - Individual: `?timeFilter=${timeFilter}` ✅
+  - Store: `?timeFilter=${timeFilter}` ✅ (was missing)
+  - My Store: `?storeCode=${code}&timeFilter=${timeFilter}` ✅ (was missing)
+
+### Technical
+- Updated: `services/leaderboard.service.ts` - added timeFilter to getStoreLeaderboard()
+- Updated: `app/api/leaderboard/store/route.ts` - accepts and passes timeFilter
+- Updated: `app/api/leaderboard/my-store/route.ts` - complete rewrite with date filtering
+- Updated: `app/(game)/leaderboard/page.tsx` - sends timeFilter to all APIs
+- Cache system: Map-based cache with separate keys per filter
+- Service Worker version: 1.4.5
+
 ## [1.4.4] - Training & Admin Improvements - 2024-12-08
 
 ### Fixed

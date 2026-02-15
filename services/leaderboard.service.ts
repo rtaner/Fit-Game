@@ -28,7 +28,7 @@ export interface StoreLeaderboardEntry {
 
 // Simple in-memory cache - separate cache for each time filter
 const individualCacheMap = new Map<string, { data: LeaderboardEntry[]; timestamp: number }>();
-let storeCache: { data: StoreLeaderboardEntry[]; timestamp: number } | null = null;
+const storeCacheMap = new Map<string, { data: StoreLeaderboardEntry[]; timestamp: number }>();
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 export const leaderboardService = {
@@ -211,13 +211,34 @@ export const leaderboardService = {
     return leaderboard;
   },
 
-  async getStoreLeaderboard(limit: number = 100): Promise<StoreLeaderboardEntry[]> {
-    // Check cache
-    if (storeCache && Date.now() - storeCache.timestamp < CACHE_TTL) {
-      return storeCache.data;
+  async getStoreLeaderboard(limit: number = 100, timeFilter: 'week' | 'month' | 'all' = 'all'): Promise<StoreLeaderboardEntry[]> {
+    // Check cache (separate cache for each time filter)
+    const cacheKey = `store_${timeFilter}`;
+    const cachedData = storeCacheMap.get(cacheKey);
+    if (cachedData && Date.now() - cachedData.timestamp < CACHE_TTL) {
+      return cachedData.data;
     }
 
     const supabase = createClient();
+
+    // Calculate date filter
+    let dateFilter: string | null = null;
+    const now = new Date();
+    
+    if (timeFilter === 'week') {
+      // Get Monday of current week (week starts on Monday)
+      const currentDay = now.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+      const daysFromMonday = currentDay === 0 ? 6 : currentDay - 1; // If Sunday, go back 6 days
+      const monday = new Date(now);
+      monday.setDate(now.getDate() - daysFromMonday);
+      monday.setHours(0, 0, 0, 0); // Start of Monday
+      dateFilter = monday.toISOString();
+    } else if (timeFilter === 'month') {
+      // Get first day of current month
+      const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      firstDayOfMonth.setHours(0, 0, 0, 0);
+      dateFilter = firstDayOfMonth.toISOString();
+    }
 
     // STEP 1: Get all stores that have members
     const { data: storesWithMembers, error: storesError } = await supabase
@@ -237,14 +258,23 @@ export const leaderboardService = {
     const { data: stores } = await supabase.from('stores').select('store_code, store_name');
     const storeMap = new Map(stores?.map((s) => [s.store_code, s.store_name]) || []);
 
-    // STEP 3: Get all game sessions
-    const { data: sessions, error: sessionsError } = await supabase
+    // STEP 3: Get game sessions (with date filter if needed)
+    let sessionsQuery = supabase
       .from('game_sessions')
       .select(`
         score,
         user_id,
+        ended_at,
         users!inner(store_code)
-      `);
+      `)
+      .not('ended_at', 'is', null);
+
+    // Apply date filter if needed
+    if (dateFilter) {
+      sessionsQuery = sessionsQuery.gte('ended_at', dateFilter);
+    }
+
+    const { data: sessions, error: sessionsError } = await sessionsQuery;
 
     if (sessionsError) {
       console.error('Error fetching sessions:', sessionsError);
@@ -303,17 +333,17 @@ export const leaderboardService = {
         rank: index + 1,
       }));
 
-    // Update cache
-    storeCache = {
+    // Update cache with correct key
+    storeCacheMap.set(cacheKey, {
       data: leaderboard,
       timestamp: Date.now(),
-    };
+    });
 
     return leaderboard;
   },
 
   clearCache() {
     individualCacheMap.clear();
-    storeCache = null;
+    storeCacheMap.clear();
   },
 };

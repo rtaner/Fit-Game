@@ -54,8 +54,8 @@ export default function LeaderboardPage() {
       try {
         const [individualRes, storeRes, myStoreRes] = await Promise.all([
           fetch(`/api/leaderboard/individual?timeFilter=${timeFilter}`),
-          fetch('/api/leaderboard/store'),
-          user?.store_code ? fetch(`/api/leaderboard/my-store?storeCode=${user.store_code}`) : Promise.resolve(null),
+          fetch(`/api/leaderboard/store?timeFilter=${timeFilter}`),
+          user?.store_code ? fetch(`/api/leaderboard/my-store?storeCode=${user.store_code}&timeFilter=${timeFilter}`) : Promise.resolve(null),
         ]);
 
         if (individualRes.ok) {
