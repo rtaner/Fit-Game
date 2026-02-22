@@ -8,16 +8,28 @@ const imageSchema = z.object({
   isPrimary: z.boolean(),
 });
 
+const customOptionSchema = z.object({
+  id: z.string(),
+  text: z.string(),
+  isCorrect: z.boolean(),
+});
+
 const updateQuestionSchema = z.object({
   name: z.string().min(1).max(200).optional(),
+  question_type: z.enum(['fit', 'custom']).optional(),
+  // Fit soruları için
   image_url: z.string().url().optional(),
   cloudinary_public_id: z.string().optional(),
   images: z.array(imageSchema).optional(),
+  gender: z.enum(['Kadın', 'Erkek']).optional(),
+  fit_category: z.string().optional(),
+  // Özel sorular için
+  custom_question_text: z.string().optional(),
+  custom_options: z.array(customOptionSchema).optional(),
+  // Ortak alanlar
   description: z.string().min(1).optional(),
   explanation: z.string().optional(),
   tags: z.array(z.string()).optional(),
-  gender: z.enum(['Kadın', 'Erkek']).optional(),
-  fit_category: z.string().optional(),
   is_active: z.boolean().optional(),
 });
 

@@ -2,6 +2,63 @@
 
 All notable changes to the Mavi Fit Game project will be documented in this file.
 
+## [1.5.0] - Custom Question Type Support - 2024-12-08
+
+### Added
+- 🎯 **Dual Question Type System**: Support for two types of questions
+  - **Fit Questions**: Existing system with automatic option generation from database
+  - **Custom Questions**: New manual question/answer format for non-fit categories
+  
+- 📝 **Custom Question Features**:
+  - Manual question text input
+  - 4 custom options (A, B, C, D) with text input
+  - Radio button selection for correct answer
+  - Optional image support
+  - Works in any category (Etik, Prosedürler, etc.)
+
+- 🎨 **Admin Panel Enhancements**:
+  - Question type selector (Fit / Custom)
+  - Dynamic form that adapts based on selected type
+  - Custom question form with 4 option inputs
+  - Visual indicators for correct answer selection
+  - Form validation for custom questions
+
+### Changed
+- 🔧 **Database Schema**: Added new columns to `question_items` table
+  - `question_type`: 'fit' | 'custom' (default: 'fit')
+  - `custom_question_text`: TEXT (question text for custom questions)
+  - `custom_options`: JSONB (array of options with id, text, isCorrect)
+  - `image_url`: Now nullable (optional for custom questions)
+
+- 🎮 **Game Logic**: Enhanced to support both question types
+  - Custom questions show 30% of the time when available
+  - Correct answer validation works for both types
+  - Explanation system adapted for custom options
+  - Analytics track both question types correctly
+
+- 📊 **Question Service**: Updated CRUD operations
+  - `createQuestion`: Handles both question types
+  - `updateQuestion`: Supports custom question fields
+  - `generateQuestion`: Intelligently mixes question types
+  - `submitAnswer`: Validates answers based on question type
+
+### Technical
+- Database migrations:
+  - `add_custom_question_type.sql`: Adds new columns and indexes
+  - `fix_image_url_nullable.sql`: Makes image_url nullable
+- Updated: `types/database.types.ts` - Added CustomOption interface
+- Updated: `services/game.service.ts` - Dual question type support
+- Updated: `services/question.service.ts` - Custom question CRUD
+- Updated: `app/(admin)/admin/questions/page.tsx` - Enhanced form
+- Updated: `app/api/admin/questions/route.ts` - Validation schemas
+- Service Worker version: 1.5.0
+
+### Use Cases
+- **Ethics Questions**: "What should you do when a customer is upset?"
+- **Procedure Questions**: "What is the first step in product return?"
+- **Policy Questions**: "What is the company policy on phone usage?"
+- **Training Questions**: Any text-based multiple choice questions
+
 ## [1.4.5] - Leaderboard Time Filters Fixed - 2024-12-08
 
 ### Fixed

@@ -30,6 +30,16 @@ export function UpdateNotification() {
       if (lastSeenVersion !== currentVersion) {
         // New version detected
         const updates: Record<string, UpdateInfo> = {
+          '1.5.0': {
+            version: '1.5.0',
+            message: 'Özel Soru Tipi Eklendi! 🎉',
+            features: [
+              'İki soru tipi: Fit ve Özel sorular',
+              'Özel sorular için manuel şık girişi',
+              'Etik gibi kategoriler için ideal',
+              'Her kategoride kullanılabilir'
+            ]
+          },
           '1.4.5': {
             version: '1.4.5',
             message: 'Zaman filtreleri düzeltildi!',

@@ -105,7 +105,8 @@ export const questionService = {
       .insert({
         category_id: input.category_id,
         name: input.name,
-        image_url: input.image_url,
+        question_type: (input as any).question_type || 'fit',
+        image_url: input.image_url || null,
         cloudinary_public_id: input.cloudinary_public_id || null,
         images: input.images || [],
         description: input.description,
@@ -113,6 +114,8 @@ export const questionService = {
         tags: input.tags,
         gender: input.gender || null,
         fit_category: input.fit_category || null,
+        custom_question_text: (input as any).custom_question_text || null,
+        custom_options: (input as any).custom_options || null,
         is_active: input.is_active ?? true,
       })
       .select()
@@ -133,6 +136,7 @@ export const questionService = {
     };
     
     if (input.name !== undefined) updateData.name = input.name;
+    if ((input as any).question_type !== undefined) updateData.question_type = (input as any).question_type;
     if (input.image_url !== undefined) updateData.image_url = input.image_url;
     if (input.cloudinary_public_id !== undefined) updateData.cloudinary_public_id = input.cloudinary_public_id;
     if (input.images !== undefined) updateData.images = input.images;
@@ -141,6 +145,8 @@ export const questionService = {
     if (input.tags !== undefined) updateData.tags = input.tags;
     if (input.gender !== undefined) updateData.gender = input.gender;
     if (input.fit_category !== undefined) updateData.fit_category = input.fit_category;
+    if ((input as any).custom_question_text !== undefined) updateData.custom_question_text = (input as any).custom_question_text;
+    if ((input as any).custom_options !== undefined) updateData.custom_options = (input as any).custom_options;
     if (input.is_active !== undefined) updateData.is_active = input.is_active;
     
     const { data, error } = await supabase

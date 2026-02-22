@@ -28,6 +28,14 @@ export default function QuestionsPage() {
     description: '',
     explanation: '',
     tags: '',
+    question_type: 'fit' as 'fit' | 'custom',
+    custom_question_text: '',
+    custom_options: [
+      { id: 'A', text: '', isCorrect: false },
+      { id: 'B', text: '', isCorrect: false },
+      { id: 'C', text: '', isCorrect: false },
+      { id: 'D', text: '', isCorrect: false },
+    ],
   });
   const [showCustomFitInput, setShowCustomFitInput] = useState(false);
   const [customFitCategory, setCustomFitCategory] = useState('');
@@ -157,10 +165,29 @@ export default function QuestionsPage() {
     e.preventDefault();
     setError(null);
 
-    // En az 1 görsel zorunlu
-    if (formData.images.length === 0 && !formData.image_url) {
-      setError('En az bir görsel yüklemelisiniz');
-      return;
+    // Validation based on question type
+    if (formData.question_type === 'fit') {
+      // Fit soruları için en az 1 görsel zorunlu
+      if (formData.images.length === 0 && !formData.image_url) {
+        setError('En az bir görsel yüklemelisiniz');
+        return;
+      }
+    } else if (formData.question_type === 'custom') {
+      // Özel sorular için soru metni ve en az 2 şık zorunlu
+      if (!formData.custom_question_text.trim()) {
+        setError('Soru metni girmelisiniz');
+        return;
+      }
+      const filledOptions = formData.custom_options.filter(opt => opt.text.trim());
+      if (filledOptions.length < 2) {
+        setError('En az 2 şık girmelisiniz');
+        return;
+      }
+      const correctOptions = formData.custom_options.filter(opt => opt.isCorrect);
+      if (correctOptions.length !== 1) {
+        setError('Tam olarak 1 doğru cevap seçmelisiniz');
+        return;
+      }
     }
 
     try {
@@ -177,15 +204,31 @@ export default function QuestionsPage() {
 
       const payload: any = {
         name: formData.name,
-        image_url: formData.image_url,
-        cloudinary_public_id: formData.cloudinary_public_id || undefined,
-        images: formData.images.length > 0 ? formData.images : undefined,
+        question_type: formData.question_type,
         gender: formData.gender,
-        fit_category: finalFitCategory || undefined,
         description: formData.description,
         explanation: formData.explanation || undefined,
         tags: formData.tags.split(',').map(t => t.trim()).filter(Boolean),
       };
+
+      // Fit soruları için
+      if (formData.question_type === 'fit') {
+        payload.image_url = formData.image_url;
+        payload.cloudinary_public_id = formData.cloudinary_public_id || undefined;
+        payload.images = formData.images.length > 0 ? formData.images : undefined;
+        payload.fit_category = finalFitCategory || undefined;
+      }
+
+      // Özel sorular için
+      if (formData.question_type === 'custom') {
+        payload.custom_question_text = formData.custom_question_text;
+        payload.custom_options = formData.custom_options.filter(opt => opt.text.trim());
+        // Görsel opsiyonel
+        if (formData.image_url) {
+          payload.image_url = formData.image_url;
+          payload.cloudinary_public_id = formData.cloudinary_public_id || undefined;
+        }
+      }
 
       // category_id sadece yeni soru eklerken gerekli
       if (!editingQuestion) {
@@ -218,13 +261,21 @@ export default function QuestionsPage() {
         description: '',
         explanation: '',
         tags: '',
+        question_type: formData.question_type, // Keep question type
+        custom_question_text: '',
+        custom_options: [
+          { id: 'A', text: '', isCorrect: false },
+          { id: 'B', text: '', isCorrect: false },
+          { id: 'C', text: '', isCorrect: false },
+          { id: 'D', text: '', isCorrect: false },
+        ],
       });
       setEditingQuestion(null);
       setShowCustomFitInput(false);
       setCustomFitCategory('');
       
       // Show success message
-      alert('Soru başarıyla eklendi! Yeni kategori artık listede görünüyor.');
+      alert('Soru başarıyla eklendi!');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Bir hata oluştu');
     }
@@ -253,6 +304,14 @@ export default function QuestionsPage() {
       description: question.description,
       explanation: question.explanation || '',
       tags: question.tags.join(', '),
+      question_type: question.question_type || 'fit',
+      custom_question_text: question.custom_question_text || '',
+      custom_options: question.custom_options || [
+        { id: 'A', text: '', isCorrect: false },
+        { id: 'B', text: '', isCorrect: false },
+        { id: 'C', text: '', isCorrect: false },
+        { id: 'D', text: '', isCorrect: false },
+      ],
     });
     setShowCustomFitInput(isCustom);
     setCustomFitCategory(isCustom ? fitCat : '');
@@ -317,6 +376,14 @@ export default function QuestionsPage() {
       description: '',
       explanation: '',
       tags: '',
+      question_type: 'fit',
+      custom_question_text: '',
+      custom_options: [
+        { id: 'A', text: '', isCorrect: false },
+        { id: 'B', text: '', isCorrect: false },
+        { id: 'C', text: '', isCorrect: false },
+        { id: 'D', text: '', isCorrect: false },
+      ],
     });
     setEditingQuestion(null);
     setShowForm(false);
@@ -403,6 +470,25 @@ export default function QuestionsPage() {
                   ))}
                 </select>
               </div>
+              
+              <div>
+                <label className="block text-sm font-bold mb-2">Soru Tipi *</label>
+                <select
+                  value={formData.question_type}
+                  onChange={(e) => setFormData({ ...formData, question_type: e.target.value as 'fit' | 'custom' })}
+                  required
+                  className="w-full px-3 py-2 border rounded"
+                >
+                  <option value="fit">Fit Sorusu (Otomatik Şıklar)</option>
+                  <option value="custom">Özel Soru (Manuel Şıklar)</option>
+                </select>
+                <p className="text-xs text-gray-500 mt-1">
+                  {formData.question_type === 'fit' 
+                    ? 'Görsel tabanlı, şıklar otomatik oluşturulur' 
+                    : 'Metin tabanlı, şıkları kendiniz girersiniz'}
+                </p>
+              </div>
+              
               <div>
                 <label className="block text-sm font-bold mb-2">Soru Adı *</label>
                 <input
@@ -411,34 +497,39 @@ export default function QuestionsPage() {
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   required
                   className="w-full px-3 py-2 border rounded"
+                  placeholder={formData.question_type === 'custom' ? 'Örn: Etik Kuralları' : 'Örn: Skinny Fit'}
                 />
               </div>
-              <div>
-                <label className="block text-sm font-bold mb-2">Cinsiyet *</label>
-                <select
-                  value={formData.gender}
-                  onChange={(e) => {
-                    const newGender = e.target.value as 'Kadın' | 'Erkek';
-                    setFormData({ ...formData, gender: newGender, fit_category: '' });
-                    setShowCustomFitInput(false);
-                    setCustomFitCategory('');
-                  }}
-                  required
-                  className="w-full px-3 py-2 border rounded"
-                >
-                  <option value="Kadın">Kadın</option>
-                  <option value="Erkek">Erkek</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-bold mb-2">
-                  {/* Kategori bazlı label */}
-                  {categories.find(cat => cat.id === formData.category_id)?.name === 'Koleksiyonlar' 
-                    ? 'Koleksiyon' 
-                    : categories.find(cat => cat.id === formData.category_id)?.name === 'Prosedürler'
-                    ? 'Prosedür Adı'
-                    : 'Fit Kategorisi'}
-                </label>
+              
+              {/* Cinsiyet ve Fit Kategorisi - Sadece fit soruları için */}
+              {formData.question_type === 'fit' && (
+                <>
+                  <div>
+                    <label className="block text-sm font-bold mb-2">Cinsiyet *</label>
+                    <select
+                      value={formData.gender}
+                      onChange={(e) => {
+                        const newGender = e.target.value as 'Kadın' | 'Erkek';
+                        setFormData({ ...formData, gender: newGender, fit_category: '' });
+                        setShowCustomFitInput(false);
+                        setCustomFitCategory('');
+                      }}
+                      required
+                      className="w-full px-3 py-2 border rounded"
+                    >
+                      <option value="Kadın">Kadın</option>
+                      <option value="Erkek">Erkek</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold mb-2">
+                      {/* Kategori bazlı label */}
+                      {categories.find(cat => cat.id === formData.category_id)?.name === 'Koleksiyonlar' 
+                        ? 'Koleksiyon' 
+                        : categories.find(cat => cat.id === formData.category_id)?.name === 'Prosedürler'
+                        ? 'Prosedür Adı'
+                        : 'Fit Kategorisi'}
+                    </label>
                 <select
                   value={formData.fit_category}
                   onChange={(e) => {
@@ -566,10 +657,18 @@ export default function QuestionsPage() {
                   </div>
                 )}
               </div>
+              </>
+              )}
+              
+              {/* Görseller - Fit soruları için zorunlu, özel sorular için opsiyonel */}
               <div className="md:col-span-2">
-                <label className="block text-sm font-bold mb-2">Görseller *</label>
+                <label className="block text-sm font-bold mb-2">
+                  Görseller {formData.question_type === 'fit' ? '*' : '(Opsiyonel)'}
+                </label>
                 <p className="text-sm text-gray-600 mb-2">
-                  Aynı fit için farklı renk/varyasyonlar ekleyebilirsiniz. İlk görsel ana görsel olacaktır.
+                  {formData.question_type === 'fit' 
+                    ? 'Aynı fit için farklı renk/varyasyonlar ekleyebilirsiniz. İlk görsel ana görsel olacaktır.'
+                    : 'Özel sorular için görsel opsiyoneldir. Eklerseniz soru ile birlikte gösterilir.'}
                 </p>
                 
                 {/* Mevcut görseller */}
@@ -638,6 +737,70 @@ export default function QuestionsPage() {
                   className="w-full px-3 py-2 border rounded"
                 />
               </div>
+              
+              {/* Özel Soru Alanları */}
+              {formData.question_type === 'custom' && (
+                <>
+                  <div className="md:col-span-2 border-t-2 border-blue-200 pt-4 mt-4">
+                    <h3 className="text-lg font-bold mb-4 text-blue-700">📝 Özel Soru Detayları</h3>
+                  </div>
+                  
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-bold mb-2">Soru Metni *</label>
+                    <textarea
+                      value={formData.custom_question_text}
+                      onChange={(e) => setFormData({ ...formData, custom_question_text: e.target.value })}
+                      required={formData.question_type === 'custom'}
+                      rows={3}
+                      placeholder="Örn: Bir müşteri ürün iadesi yapmak istediğinde ilk olarak ne yapmalısınız?"
+                      className="w-full px-3 py-2 border rounded"
+                    />
+                  </div>
+                  
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-bold mb-4">Şıklar (En az 2 şık, 1 doğru cevap) *</label>
+                    <div className="space-y-3">
+                      {formData.custom_options.map((option, index) => (
+                        <div key={option.id} className="flex items-start gap-3 p-3 border rounded-lg bg-gray-50">
+                          <input
+                            type="radio"
+                            name="correct_answer"
+                            checked={option.isCorrect}
+                            onChange={() => {
+                              const newOptions = formData.custom_options.map((opt, i) => ({
+                                ...opt,
+                                isCorrect: i === index
+                              }));
+                              setFormData({ ...formData, custom_options: newOptions });
+                            }}
+                            className="mt-1"
+                          />
+                          <div className="flex-1">
+                            <label className="block text-sm font-medium mb-1">
+                              Şık {option.id}
+                              {option.isCorrect && <span className="ml-2 text-green-600 text-xs">✓ Doğru Cevap</span>}
+                            </label>
+                            <input
+                              type="text"
+                              value={option.text}
+                              onChange={(e) => {
+                                const newOptions = [...formData.custom_options];
+                                newOptions[index].text = e.target.value;
+                                setFormData({ ...formData, custom_options: newOptions });
+                              }}
+                              placeholder={`${option.id} şıkkını yazın...`}
+                              className="w-full px-3 py-2 border rounded"
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <p className="text-xs text-gray-500 mt-2">
+                      💡 Sol taraftaki radio button ile doğru cevabı seçin
+                    </p>
+                  </div>
+                </>
+              )}
             </div>
             <div className="flex gap-2 mt-4">
               <button

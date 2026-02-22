@@ -1,6 +1,6 @@
 // Service Worker for Mavi Fit Game PWA
 // VERSION: Update this number when you want to force update
-const VERSION = '1.4.5'; // Leaderboard time filters fixed
+const VERSION = '1.5.0'; // Custom question type support
 const CACHE_NAME = `mavi-fit-game-v${VERSION}`;
 const STATIC_CACHE = `static-v${VERSION}`;
 const DYNAMIC_CACHE = `dynamic-v${VERSION}`;

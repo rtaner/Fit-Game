@@ -8,18 +8,49 @@ const imageSchema = z.object({
   isPrimary: z.boolean(),
 });
 
+const customOptionSchema = z.object({
+  id: z.string(),
+  text: z.string(),
+  isCorrect: z.boolean(),
+});
+
 const createQuestionSchema = z.object({
   category_id: z.string().uuid(),
   name: z.string().min(1).max(200),
-  image_url: z.string().url(),
+  question_type: z.enum(['fit', 'custom']).default('fit'),
+  // Fit soruları için
+  image_url: z.string().url().optional(),
   cloudinary_public_id: z.string().optional(),
   images: z.array(imageSchema).optional(),
+  gender: z.enum(['Kadın', 'Erkek']).optional(),
+  fit_category: z.string().optional(),
+  // Özel sorular için
+  custom_question_text: z.string().optional(),
+  custom_options: z.array(customOptionSchema).optional(),
+  // Ortak alanlar
   description: z.string().min(1),
   explanation: z.string().optional(),
   tags: z.array(z.string()),
-  gender: z.enum(['Kadın', 'Erkek']).optional(),
-  fit_category: z.string().optional(),
   is_active: z.boolean().optional(),
+}).refine((data) => {
+  // Fit soruları için image_url zorunlu
+  if (data.question_type === 'fit' && !data.image_url) {
+    return false;
+  }
+  // Özel sorular için custom_question_text ve custom_options zorunlu
+  if (data.question_type === 'custom') {
+    if (!data.custom_question_text || !data.custom_options || data.custom_options.length < 2) {
+      return false;
+    }
+    // Tam olarak 1 doğru cevap olmalı
+    const correctCount = data.custom_options.filter(opt => opt.isCorrect).length;
+    if (correctCount !== 1) {
+      return false;
+    }
+  }
+  return true;
+}, {
+  message: 'Soru tipi için gerekli alanlar eksik veya hatalı'
 });
 
 export async function GET(request: NextRequest) {

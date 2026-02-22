@@ -40,6 +40,12 @@ export interface QuizCategory {
   updated_at: string;
 }
 
+export interface CustomOption {
+  id: string;
+  text: string;
+  isCorrect: boolean;
+}
+
 export interface QuestionItem {
   id: string;
   category_id: string;
@@ -52,6 +58,9 @@ export interface QuestionItem {
   gender: 'Kadın' | 'Erkek' | null;
   fit_category: string | null;
   is_active: boolean;
+  question_type: 'fit' | 'custom';
+  custom_question_text: string | null;
+  custom_options: CustomOption[] | null;
   created_at: string;
   updated_at: string;
 }

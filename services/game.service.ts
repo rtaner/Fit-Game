@@ -43,6 +43,42 @@ export interface GameSession {
 }
 
 export const gameService = {
+  // Helper: Generate custom question (manual options)
+  generateCustomQuestion(availableQuestions: any[]): GameQuestion | null {
+    if (availableQuestions.length === 0) return null;
+
+    const question = availableQuestions[Math.floor(Math.random() * availableQuestions.length)];
+    const customOptions = question.custom_options || [];
+
+    if (customOptions.length < 2) {
+      console.error('Custom question has less than 2 options');
+      return null;
+    }
+
+    const correctOption = customOptions.find((opt: any) => opt.isCorrect);
+    if (!correctOption) {
+      console.error('Custom question has no correct answer');
+      return null;
+    }
+
+    // Shuffle options
+    const shuffledOptions = [...customOptions].sort(() => Math.random() - 0.5);
+
+    return {
+      questionId: question.id,
+      correctAnswerId: correctOption.id,
+      options: shuffledOptions.map((opt: any) => ({
+        id: opt.id,
+        name: opt.text,
+        imageUrl: '', // Custom questions don't have option images
+      })),
+      questionText: question.custom_question_text || question.name,
+      description: question.description || question.custom_question_text,
+      imageUrl: question.image_url || '', // Optional image
+      color: 'custom', // Special marker for custom questions
+    };
+  },
+
   // Helper: Calculate multiplier based on streak
   calculateMultiplier(streak: number): number {
     if (streak >= 41) return 5;
@@ -160,8 +196,35 @@ export const gameService = {
       return null;
     }
 
+    // Separate questions by type
+    const fitQuestions = allQuestions.filter(q => (q as any).question_type === 'fit' || !(q as any).question_type);
+    const customQuestions = allQuestions.filter(q => (q as any).question_type === 'custom');
+
+    console.log('📊 Questions:', { total: allQuestions.length, fit: fitQuestions.length, custom: customQuestions.length });
+
+    // Check if we have custom questions to show
+    const hasCustomQuestions = customQuestions.length > 0;
+    const alreadyAskedCustomIds = askedCombinations
+      .filter(combo => combo.color === 'custom') // Custom questions use 'custom' as color marker
+      .map(combo => combo.questionId);
+    
+    const availableCustomQuestions = customQuestions.filter(
+      q => !alreadyAskedCustomIds.includes(q.id)
+    );
+
+    // Decide whether to show a custom question (30% chance if available)
+    const shouldShowCustom = hasCustomQuestions && 
+                             availableCustomQuestions.length > 0 && 
+                             Math.random() < 0.3;
+
+    if (shouldShowCustom) {
+      // Generate custom question
+      return this.generateCustomQuestion(availableCustomQuestions);
+    }
+
+    // Continue with fit question logic (existing code)
     // Filter out questions that have been asked with all their colors
-    const availableQuestions = allQuestions.filter(q => {
+    const availableQuestions = fitQuestions.filter(q => {
       // Get all colors for this question
       const questionColors = q.images && Array.isArray(q.images) 
         ? q.images.map((img: ProductImage) => img.color)
@@ -176,10 +239,10 @@ export const gameService = {
       return askedColors.length < questionColors.length;
     });
 
-    console.log('Total questions:', allQuestions.length, 'Available combinations:', availableQuestions.length, 'Already asked:', askedCombinations.length);
+    console.log('Total fit questions:', fitQuestions.length, 'Available combinations:', availableQuestions.length, 'Already asked:', askedCombinations.length);
 
     // 🎉 ALL QUESTIONS COMPLETED!
-    if (availableQuestions.length < 3) {
+    if (availableQuestions.length < 3 && availableCustomQuestions.length === 0) {
       console.log('🎉 All questions completed! Returning completion flag.');
       // Return a special completion marker instead of null
       return {
@@ -193,6 +256,12 @@ export const gameService = {
       } as GameQuestion;
     }
 
+    // If not enough fit questions but have custom questions, show custom
+    if (availableQuestions.length < 3 && availableCustomQuestions.length > 0) {
+      return this.generateCustomQuestion(availableCustomQuestions);
+    }
+
+    // Continue with existing fit question generation logic...
     // Select random correct answer from available questions
     const correctAnswer = availableQuestions[Math.floor(Math.random() * availableQuestions.length)];
     
@@ -471,7 +540,28 @@ export const gameService = {
 
     const usedColors = session.used_colors || [];
 
-    const isCorrect = questionId === selectedAnswerId;
+    // Get question to check if it's custom type
+    const { data: question } = await supabase
+      .from('question_items')
+      .select('question_type, custom_options')
+      .eq('id', questionId)
+      .single();
+
+    let isCorrect = false;
+    let correctAnswerId = questionId; // Default for fit questions
+
+    if (question && question.question_type === 'custom' && question.custom_options) {
+      // For custom questions, check if selected option is marked as correct
+      const selectedOption = question.custom_options.find((opt: any) => opt.id === selectedAnswerId);
+      isCorrect = selectedOption?.isCorrect || false;
+      
+      // Find the correct answer ID for analytics
+      const correctOption = question.custom_options.find((opt: any) => opt.isCorrect);
+      correctAnswerId = correctOption?.id || questionId;
+    } else {
+      // For fit questions, questionId === selectedAnswerId
+      isCorrect = questionId === selectedAnswerId;
+    }
     
     // Calculate new streak and score with multiplier
     let newStreak = isCorrect ? (session.current_streak || 0) + 1 : 0;
@@ -485,7 +575,7 @@ export const gameService = {
       session_id: sessionId,
       user_id: session.user_id,
       question_id: questionId,
-      correct_answer_id: questionId,
+      correct_answer_id: correctAnswerId,
       selected_answer_id: selectedAnswerId,
       is_correct: isCorrect,
       response_time_ms: responseTimeMs,
@@ -504,8 +594,8 @@ export const gameService = {
 
     if (!isCorrect) {
       await this.endGame(sessionId);
-      const explanationData = await this.getQuestionExplanation(questionId);
-      const userAnswerData = await this.getQuestionExplanation(selectedAnswerId);
+      const explanationData = await this.getQuestionExplanation(questionId, correctAnswerId);
+      const userAnswerData = await this.getQuestionExplanation(questionId, selectedAnswerId);
       return { 
         isCorrect: false, 
         newScore,
@@ -580,16 +670,29 @@ export const gameService = {
     };
   },
 
-  async getQuestionExplanation(questionId: string): Promise<{ fitName: string; explanation: string } | null> {
+  async getQuestionExplanation(questionId: string, optionId?: string): Promise<{ fitName: string; explanation: string } | null> {
     const supabase = createClient();
 
     const { data, error } = await supabase
       .from('question_items')
-      .select('name, explanation, description')
+      .select('name, explanation, description, question_type, custom_options')
       .eq('id', questionId)
       .single();
 
     if (error || !data) return null;
+
+    // For custom questions with option ID, return the option text
+    if (data.question_type === 'custom' && optionId && data.custom_options) {
+      const option = data.custom_options.find((opt: any) => opt.id === optionId);
+      if (option) {
+        return {
+          fitName: `Şık ${optionId}`,
+          explanation: option.text
+        };
+      }
+    }
+
+    // For fit questions or custom questions without option ID
     return {
       fitName: data.name,
       explanation: data.explanation || data.description || ''
