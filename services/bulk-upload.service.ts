@@ -3,12 +3,19 @@ import { questionService, type QuestionCreateInput } from './question.service';
 
 export interface BulkUploadRow {
   name: string;
-  image_url: string;
+  image_url?: string;
   description: string;
   explanation?: string;
   tags: string;
   gender?: string;
   fit_category?: string;
+  question_type?: 'fit' | 'custom';
+  custom_question_text?: string;
+  option_a?: string;
+  option_b?: string;
+  option_c?: string;
+  option_d?: string;
+  correct_answer?: string;
 }
 
 export interface BulkUploadResult {
@@ -85,6 +92,7 @@ export const bulkUploadService = {
     // Log the row being validated
     console.log(`🔍 Validating row ${rowIndex + 1}:`, {
       name: row.name ? `"${row.name}"` : 'EMPTY',
+      question_type: row.question_type || 'fit',
       image_url: row.image_url ? `"${row.image_url.substring(0, 50)}..."` : 'EMPTY',
       description: row.description ? `"${row.description.substring(0, 50)}..."` : 'EMPTY',
       hasName: !!row.name,
@@ -97,16 +105,36 @@ export const bulkUploadService = {
       return `Satır ${rowIndex + 1}: Soru adı boş olamaz (name: "${row.name}")`;
     }
 
-    if (!row.image_url || row.image_url.trim() === '') {
-      console.error(`❌ Row ${rowIndex + 1}: Image URL is empty`);
-      return `Satır ${rowIndex + 1}: Resim URL'si boş olamaz`;
+    const questionType = row.question_type || 'fit';
+
+    // Fit questions require image_url
+    if (questionType === 'fit') {
+      if (!row.image_url || row.image_url.trim() === '') {
+        console.error(`❌ Row ${rowIndex + 1}: Image URL is empty for fit question`);
+        return `Satır ${rowIndex + 1}: Fit soruları için resim URL'si zorunludur`;
+      }
+
+      try {
+        new URL(row.image_url);
+      } catch {
+        console.error(`❌ Row ${rowIndex + 1}: Invalid URL: ${row.image_url}`);
+        return `Satır ${rowIndex + 1}: Geçersiz resim URL'si (${row.image_url})`;
+      }
     }
 
-    try {
-      new URL(row.image_url);
-    } catch {
-      console.error(`❌ Row ${rowIndex + 1}: Invalid URL: ${row.image_url}`);
-      return `Satır ${rowIndex + 1}: Geçersiz resim URL'si (${row.image_url})`;
+    // Custom questions require custom fields
+    if (questionType === 'custom') {
+      if (!row.custom_question_text || row.custom_question_text.trim() === '') {
+        return `Satır ${rowIndex + 1}: Custom sorular için soru metni (custom_question_text) zorunludur`;
+      }
+
+      if (!row.option_a || !row.option_b || !row.option_c || !row.option_d) {
+        return `Satır ${rowIndex + 1}: Custom sorular için tüm şıklar (option_a, option_b, option_c, option_d) zorunludur`;
+      }
+
+      if (!row.correct_answer || !['A', 'B', 'C', 'D'].includes(row.correct_answer.toUpperCase())) {
+        return `Satır ${rowIndex + 1}: Doğru cevap (correct_answer) A, B, C veya D olmalıdır`;
+      }
     }
 
     if (!row.description || row.description.trim() === '') {
@@ -152,34 +180,55 @@ export const bulkUploadService = {
           ? row.tags.split(',').map((t) => t.trim()).filter(Boolean)
           : [];
 
-        // 🎨 Automatically create images array from image_url
-        const images: Array<{ url: string; color: string; isPrimary: boolean }> = [
-          {
-            url: row.image_url.trim(),
-            color: 'default',
-            isPrimary: true
-          }
-        ];
+        const questionType = row.question_type || 'fit';
 
-        // Create question
+        // Base input
         const input: QuestionCreateInput = {
           category_id: categoryId,
           name: row.name.trim(),
-          question_type: 'fit',
-          image_url: row.image_url.trim(),
-          images, // ✅ Add images array automatically
+          question_type: questionType,
           description: row.description.trim(),
           explanation: row.explanation?.trim(),
           tags,
-          gender: row.gender?.trim() as 'Kadın' | 'Erkek' | undefined,
-          fit_category: row.fit_category?.trim(),
         };
+
+        // Add fit-specific fields
+        if (questionType === 'fit') {
+          // 🎨 Automatically create images array from image_url
+          const images: Array<{ url: string; color: string; isPrimary: boolean }> = [
+            {
+              url: row.image_url!.trim(),
+              color: 'default',
+              isPrimary: true
+            }
+          ];
+
+          input.image_url = row.image_url!.trim();
+          input.images = images;
+          input.gender = row.gender?.trim() as 'Kadın' | 'Erkek' | undefined;
+          input.fit_category = row.fit_category?.trim();
+        }
+
+        // Add custom-specific fields
+        if (questionType === 'custom') {
+          input.custom_question_text = row.custom_question_text!.trim();
+          
+          const correctAnswerLetter = row.correct_answer!.toUpperCase();
+          input.custom_options = [
+            { id: 'A', text: row.option_a!.trim(), isCorrect: correctAnswerLetter === 'A' },
+            { id: 'B', text: row.option_b!.trim(), isCorrect: correctAnswerLetter === 'B' },
+            { id: 'C', text: row.option_c!.trim(), isCorrect: correctAnswerLetter === 'C' },
+            { id: 'D', text: row.option_d!.trim(), isCorrect: correctAnswerLetter === 'D' },
+          ];
+        }
 
         console.log(`💾 Creating question for row ${i + 1}:`, {
           name: input.name,
+          question_type: input.question_type,
           gender: input.gender,
           fit_category: input.fit_category,
-          hasImages: !!input.images
+          hasImages: !!input.images,
+          hasCustomOptions: !!input.custom_options
         });
 
         const question = await questionService.createQuestion(input);
@@ -211,34 +260,39 @@ export const bulkUploadService = {
    * Generate sample CSV template
    */
   generateTemplate(): string {
-    const headers = ['name', 'image_url', 'description', 'explanation', 'tags', 'gender', 'fit_category'];
+    const headers = ['name', 'question_type', 'image_url', 'description', 'explanation', 'tags', 'gender', 'fit_category', 'custom_question_text', 'option_a', 'option_b', 'option_c', 'option_d', 'correct_answer'];
     const sampleRows = [
       [
         'Marcus Fit',
+        'fit',
         'https://res.cloudinary.com/YOUR_CLOUD/image/upload/v1/marcus-fit.jpg',
         'Slim fit denim pantolon',
         'Dar kesim modern görünüm',
         'Slim,Denim',
         'Erkek',
         'SLIM',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
       ],
       [
-        'Carrot Fit',
-        'https://res.cloudinary.com/YOUR_CLOUD/image/upload/v1/carrot-fit.jpg',
-        'Havuç kesim pantolon',
-        'Üstten bol alttan dar',
-        'Carrot,Denim',
-        'Erkek',
-        'CARROT',
-      ],
-      [
-        'Serenay',
-        'https://res.cloudinary.com/YOUR_CLOUD/image/upload/v1/serenay.jpg',
-        'Yüksek bel süper skinny',
-        'Çok dar kesim',
-        'Super Skinny,Yüksek Bel',
-        'Kadın',
-        'SUPER SKINNY',
+        'Etik Soru 1',
+        'custom',
+        '',
+        'Etik kurallar',
+        'Müşteri memnuniyeti önceliğimizdir',
+        'Etik,Müşteri',
+        '',
+        '',
+        'Müşteriye nasıl davranmalıyız?',
+        'Saygılı ve güler yüzlü',
+        'Umursamaz',
+        'Sadece satış odaklı',
+        'Hızlı geçiştirmeli',
+        'A',
       ],
     ];
 
