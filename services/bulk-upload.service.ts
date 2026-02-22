@@ -165,6 +165,7 @@ export const bulkUploadService = {
         const input: QuestionCreateInput = {
           category_id: categoryId,
           name: row.name.trim(),
+          question_type: 'fit',
           image_url: row.image_url.trim(),
           images, // ✅ Add images array automatically
           description: row.description.trim(),
