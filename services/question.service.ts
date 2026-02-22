@@ -10,27 +10,33 @@ export interface ProductImage {
 export interface QuestionCreateInput {
   category_id: string;
   name: string;
-  image_url: string;
-  cloudinary_public_id?: string;
+  question_type: 'fit' | 'custom';
+  image_url?: string | null;
+  cloudinary_public_id?: string | null;
   images?: ProductImage[];
   description: string;
-  explanation?: string;
+  explanation?: string | null;
   tags: string[];
-  gender?: 'Kadın' | 'Erkek';
-  fit_category?: string;
+  gender?: 'Kadın' | 'Erkek' | null;
+  fit_category?: string | null;
+  custom_question_text?: string | null;
+  custom_options?: Array<{ id: string; text: string; isCorrect: boolean }> | null;
   is_active?: boolean;
 }
 
 export interface QuestionUpdateInput {
   name?: string;
-  image_url?: string;
-  cloudinary_public_id?: string;
+  question_type?: 'fit' | 'custom';
+  image_url?: string | null;
+  cloudinary_public_id?: string | null;
   images?: ProductImage[];
   description?: string;
-  explanation?: string;
+  explanation?: string | null;
   tags?: string[];
-  gender?: 'Kadın' | 'Erkek';
-  fit_category?: string;
+  gender?: 'Kadın' | 'Erkek' | null;
+  fit_category?: string | null;
+  custom_question_text?: string | null;
+  custom_options?: Array<{ id: string; text: string; isCorrect: boolean }> | null;
   is_active?: boolean;
 }
 
