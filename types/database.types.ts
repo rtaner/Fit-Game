@@ -124,3 +124,46 @@ export interface StoreUpdateInput {
   store_name?: string;
   is_active?: boolean;
 }
+
+export interface QuestionCreateInput {
+  category_id: string;
+  name: string;
+  question_type: 'fit' | 'custom';
+  description: string;
+  tags: string[];
+  image_url?: string | null;
+  cloudinary_public_id?: string | null;
+  images?: Array<{
+    url: string;
+    cloudinary_public_id: string;
+    gender: 'Kadın' | 'Erkek';
+    fit_category: string;
+  }>;
+  explanation?: string | null;
+  gender?: 'Kadın' | 'Erkek' | null;
+  fit_category?: string | null;
+  custom_question_text?: string | null;
+  custom_options?: CustomOption[] | null;
+  is_active?: boolean;
+}
+
+export interface QuestionUpdateInput {
+  name?: string;
+  question_type?: 'fit' | 'custom';
+  description?: string;
+  tags?: string[];
+  image_url?: string | null;
+  cloudinary_public_id?: string | null;
+  images?: Array<{
+    url: string;
+    cloudinary_public_id: string;
+    gender: 'Kadın' | 'Erkek';
+    fit_category: string;
+  }>;
+  explanation?: string | null;
+  gender?: 'Kadın' | 'Erkek' | null;
+  fit_category?: string | null;
+  custom_question_text?: string | null;
+  custom_options?: CustomOption[] | null;
+  is_active?: boolean;
+}
